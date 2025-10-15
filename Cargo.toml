@@ -1,0 +1,56 @@
+[package]
+name = "amari-mcp"
+version = "0.1.0"
+edition = "2021"
+authors = ["Amari Contributors"]
+license = "MIT OR Apache-2.0"
+description = "Model Context Protocol server for Amari mathematical computing library"
+repository = "https://github.com/justinelliottcobb/amari-mcp"
+homepage = "https://github.com/justinelliottcobb/amari-mcp"
+keywords = ["mcp", "mathematics", "geometric-algebra", "tropical-algebra", "gpu"]
+categories = ["mathematics", "science", "algorithms", "web-programming"]
+
+[dependencies]
+# Core Amari library
+amari = { version = "0.9.5", features = ["gpu"] }
+
+# MCP framework (using a placeholder - replace with actual MCP crate when available)
+# mcp = "0.1"
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Optional database support
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json"], optional = true }
+uuid = { version = "1.0", features = ["v4", "serde"], optional = true }
+chrono = { version = "0.4", features = ["serde"], optional = true }
+
+# CLI
+clap = { version = "4.0", features = ["derive"] }
+
+[features]
+default = []
+database = ["dep:sqlx", "dep:uuid", "dep:chrono"]
+gpu = ["amari/gpu"]
+
+[[bin]]
+name = "amari-mcp"
+path = "src/main.rs"
+
+[dev-dependencies]
+approx = "0.5"
+
+[workspace]
+# Empty workspace table to prevent this from being part of parent workspace
