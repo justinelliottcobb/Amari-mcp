@@ -31,7 +31,7 @@ struct Cli {
 
     /// Database URL for persistent storage (requires database feature)
     #[cfg(feature = "database")]
-    #[arg(long, env = "DATABASE_URL")]
+    #[arg(long)]
     database_url: Option<String>,
 
     /// Configuration file path

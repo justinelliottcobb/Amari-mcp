@@ -8,7 +8,7 @@ pub async fn batch_compute(params: Value) -> Result<Value> {
         .as_str()
         .ok_or_else(|| anyhow::anyhow!("operation must be a string"))?;
 
-    let data = &params["data"];
+    let _data = &params["data"];
 
     let batch_size = params["batch_size"]
         .as_u64()
