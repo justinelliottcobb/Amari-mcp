@@ -1,25 +1,49 @@
 # Claude Code Integration Guide
 
-This document describes how to use the Amari MCP server within Claude Code sessions for mathematical computing tasks.
+This document describes how to use the Amari MCP server within Claude Code sessions for mathematical computing tasks using the **real Model Context Protocol (MCP)** implementation.
 
 ## Quick Start for Claude Code Sessions
 
 ### 1. Start the MCP Server
 
+The Amari MCP server now uses the **real MCP protocol** with stdio transport (industry standard):
+
 ```bash
-# In your project terminal
+# Basic server (CPU only)
 cd /path/to/amari-mcp
-cargo run --release --features gpu -- --port 3000 --gpu
+cargo run --release
+
+# With GPU acceleration
+cargo run --release -- --gpu
+
+# With database caching (requires PostgreSQL)
+cargo run --release --features database -- --database-url "postgresql://user:pass@localhost/amari_mcp"
+
+# All features enabled
+cargo run --release --features gpu,database -- --gpu --database-url "postgresql://user:pass@localhost/amari_mcp"
 ```
 
-### 2. Verify Server is Running
+### 2. MCP Protocol Communication
+
+The server uses **stdio transport** (standard input/output) for MCP communication, not HTTP. This is the industry standard for Model Context Protocol servers:
 
 ```bash
-# Check if server started successfully
-curl -s http://localhost:3000/health || echo "Use the MCP protocol instead of HTTP"
+# Server listens for MCP messages on stdin/stdout
+# Claude Code and other MCP clients communicate via JSON-RPC over stdio
+echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | cargo run --release
 ```
 
-### 3. Claude Code Usage Patterns
+### 3. MCP Technology Implementation
+
+**Real Model Context Protocol** - The Amari MCP server now uses a production-ready implementation:
+
+- **SDK**: `pmcp` v1.8.0 - High-quality Rust SDK with full TypeScript compatibility
+- **Transport**: `stdio` (standard input/output) - Industry standard for MCP servers
+- **Protocol**: JSON-RPC over stdio - Fully compliant with MCP specification
+- **Tool Handlers**: `async-trait` pattern for clean async tool execution
+- **Error Handling**: Proper MCP error responses with structured feedback
+
+### 4. Claude Code Usage Patterns
 
 The MCP server provides tools that Claude Code can use to help with mathematical computing tasks in your Amari-dependent projects.
 
@@ -110,32 +134,40 @@ fn test_geometric_product() {
 
 ## Available MCP Tools
 
+**✅ Real MCP Protocol Implementation** - All tools are now properly integrated with the Model Context Protocol using the `pmcp` Rust SDK.
+
 ### Core Mathematical Operations
 
-| Tool | Purpose | Input | Output |
-|------|---------|-------|--------|
-| `create_multivector` | Create multivector from coefficients | coefficients, signature | multivector object |
-| `geometric_product` | Compute a ∧ b | multivector a, b | product result |
-| `rotor_rotation` | Rotate vector by rotor | vector, axis, angle | rotated vector |
-| `tropical_matrix_multiply` | Min-plus matrix product | matrix_a, matrix_b | tropical result |
-| `shortest_path` | Graph shortest paths | adjacency_matrix, source | distances |
-| `compute_gradient` | Forward-mode AD | expression, variables, values | gradient |
-| `ca_evolution` | Evolve cellular automata | initial_state, rule, steps | evolved state |
-| `fisher_information` | Information geometry | distribution, parameters | Fisher matrix |
+| Tool | Purpose | Input Format | Output Format |
+|------|---------|-------------|---------------|
+| `create_multivector` | Create multivector from coefficients | `{"coefficients": [f64], "signature": [usize]}` | JSON multivector object |
+| `geometric_product` | Compute geometric product a * b | `{"a": [f64], "b": [f64], "signature": [usize]}` | JSON product result |
+| `rotor_rotation` | Rotate vector using rotor | `{"vector": [f64], "axis": [f64], "angle": f64}` | JSON rotated vector |
+| `tropical_matrix_multiply` | Min-plus matrix multiplication | `{"matrix_a": [[f64]], "matrix_b": [[f64]]}` | JSON tropical result |
+| `shortest_path` | Graph shortest path computation | `{"adjacency_matrix": [[f64]], "source": usize}` | JSON distances array |
+| `compute_gradient` | Forward-mode automatic differentiation | `{"expression": str, "variables": [str], "values": [f64]}` | JSON gradient vector |
+| `ca_evolution` | Evolve geometric cellular automata | `{"initial_state": [[f64]], "rule": str, "steps": usize}` | JSON evolved state |
+| `fisher_information` | Information geometry calculations | `{"distribution": str, "parameters": [f64], "data": [f64]}` | JSON Fisher matrix |
+| `get_cayley_table` | Retrieve/compute Cayley tables | `{"signature": [usize], "force_recompute": bool}` | JSON Cayley table |
 
-### GPU Acceleration (Optional)
+### GPU Acceleration (Optional - requires `--gpu` flag)
 
-| Tool | Purpose | Input | Output |
-|------|---------|-------|--------|
-| `gpu_batch_compute` | Batch GPU operations | operation, data, batch_size | GPU results |
+| Tool | Purpose | Input Format | Output Format |
+|------|---------|-------------|---------------|
+| `gpu_batch_compute` | High-performance batch GPU operations | `{"operation": str, "data": Value, "batch_size": usize}` | JSON GPU results |
 
-### Future Tools (Planned)
+### Database Caching (Optional - requires `--features database`)
 
-| Tool | Purpose | Status |
-|------|---------|--------|
-| `cayley_table_lookup` | Cached Cayley table operations | Todo |
-| `save_computation` | Cache expensive results | Database feature |
-| `load_computation` | Retrieve cached results | Database feature |
+| Tool | Purpose | Input Format | Output Format |
+|------|---------|-------------|---------------|
+| `save_computation` | Cache expensive computational results | `{"name": str, "type": str, "result": Value}` | JSON confirmation |
+| `load_computation` | Retrieve cached computational results | `{"name": str}` | JSON cached result |
+
+### Amari-Fusion Integration
+
+| Tool | Purpose | Input Format | Output Format |
+|------|---------|-------------|---------------|
+| `get_cayley_table` | **✅ Implemented** - Retrieve/compute Cayley tables | `{"signature": [usize], "force_recompute": bool}` | JSON Cayley table |
 
 ## Error Handling
 

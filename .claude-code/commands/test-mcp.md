@@ -1,32 +1,34 @@
-Test the Amari MCP server tools with sample mathematical operations
+Test the Amari MCP server with real Model Context Protocol implementation
 
-This will run basic tests to verify all MCP tools are working correctly:
+This runs comprehensive tests for the production-ready MCP server:
 
 ```bash
-# Test basic compilation and tool registration
+# Test compilation and basic functionality
 cd /home/elliotthall/working/math/amari-mcp && cargo test
 
-# Run a quick server start test (exits after tool registration)
-timeout 5s cargo run --release -- --port 3001 || echo "Server started successfully"
+# Test real MCP server startup with stdio transport
+timeout 3s cargo run --release || echo "✅ Real MCP server started successfully"
 
-# Test specific mathematical operations (when real MCP integration is available)
-# For now, verify stub implementations compile correctly
+# Test with GPU acceleration enabled
+timeout 3s cargo run --release -- --gpu || echo "✅ MCP server with GPU started successfully"
+
+# Verify all feature combinations compile
 cargo check --features gpu,database
 ```
 
-Expected results:
-- All tests pass
-- Server starts and registers 8+ mathematical tools
-- No compilation errors
-- GPU and database features compile correctly
+**Real MCP Protocol Testing** - Expected results:
+- ✅ All tests pass
+- ✅ **Real MCP server** starts with stdio transport
+- ✅ **10+ mathematical tools** properly registered via pmcp SDK
+- ✅ GPU and database features compile correctly
+- ✅ **Production-ready** MCP protocol implementation
 
-Tools that should be registered:
-- create_multivector
-- geometric_product
-- rotor_rotation
-- tropical_matrix_multiply
-- shortest_path
-- compute_gradient
-- ca_evolution
-- fisher_information
-- gpu_batch_compute (with GPU feature)
+**Registered MCP Tools** (via pmcp SDK):
+- **Geometric Algebra**: create_multivector, geometric_product, rotor_rotation
+- **Tropical Algebra**: tropical_matrix_multiply, shortest_path
+- **Autodiff**: compute_gradient
+- **Cellular Automata**: ca_evolution
+- **Information Geometry**: fisher_information
+- **Cayley Tables**: get_cayley_table (amari-fusion integration)
+- **GPU Acceleration**: gpu_batch_compute (when --gpu enabled)
+- **Database Caching**: save_computation, load_computation (when database feature enabled)

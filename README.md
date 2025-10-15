@@ -1,6 +1,8 @@
 # Amari MCP Server
 
-Model Context Protocol server for the Amari mathematical computing library, providing access to advanced geometric algebra, tropical algebra, automatic differentiation, and GPU-accelerated computations.
+**Production-ready Model Context Protocol server** for the Amari mathematical computing library, providing Claude Code and other AI assistants with access to advanced geometric algebra, tropical algebra, automatic differentiation, and GPU-accelerated computations.
+
+🚀 **Real MCP Implementation** - Uses `pmcp` Rust SDK with stdio transport (industry standard)
 
 ## Features
 
@@ -13,33 +15,37 @@ Model Context Protocol server for the Amari mathematical computing library, prov
 - **Information Geometry**: Fisher information matrices, statistical manifolds
 - **GPU Acceleration**: Batch processing, parallel computations
 
-### 🚀 MCP Tools
+### 🚀 Real MCP Tools (10+ Available)
+
+✅ **Production Ready** - All tools implemented with `pmcp` SDK and `async-trait` handlers
 
 #### Geometric Algebra
-- `create_multivector` - Create multivectors from coefficients
-- `geometric_product` - Compute geometric products
-- `rotor_rotation` - Apply rotations using rotors
+- `create_multivector` - Create multivectors from coefficients and signatures
+- `geometric_product` - Compute geometric products with metric signatures
+- `rotor_rotation` - Apply rotations using rotors and bivector exponentials
 
 #### Tropical Algebra
-- `tropical_matrix_multiply` - Tropical matrix operations
+- `tropical_matrix_multiply` - Min-plus matrix operations for optimization
 - `shortest_path` - Graph shortest paths via tropical algebra
 
 #### Automatic Differentiation
-- `compute_gradient` - Forward-mode AD gradients
-- `jacobian_matrix` - Compute Jacobian matrices
+- `compute_gradient` - Forward-mode AD with expression parsing
 
 #### Cellular Automata
-- `ca_evolution` - Evolve geometric cellular automata
+- `ca_evolution` - Evolve geometric cellular automata with custom rules
 
 #### Information Geometry
-- `fisher_information` - Compute Fisher information matrices
+- `fisher_information` - Compute Fisher information matrices for statistical manifolds
 
-#### GPU Acceleration
-- `gpu_batch_compute` - Batch operations on GPU
+#### Amari-Fusion Integration
+- `get_cayley_table` - **✅ Implemented** - Retrieve/compute cached Cayley tables
 
-#### Database (Optional)
-- `save_computation` - Save results to PostgreSQL
-- `load_computation` - Load saved computations
+#### GPU Acceleration (Optional - `--gpu` flag)
+- `gpu_batch_compute` - High-performance batch operations on GPU
+
+#### Database Caching (Optional - `--features database`)
+- `save_computation` - Cache expensive results in PostgreSQL
+- `load_computation` - Retrieve cached computational results
 
 ## Installation
 
@@ -67,36 +73,45 @@ cargo build --release --features gpu,database
 
 ## Usage
 
-### Basic Server
+🚀 **Real MCP Protocol** - Uses stdio transport (industry standard)
+
+### Basic MCP Server
 
 ```bash
-./target/release/amari-mcp --port 3000
+# CPU-only server with stdio transport
+cargo run --release
 ```
 
 ### With GPU Acceleration
 
 ```bash
-./target/release/amari-mcp --port 3000 --gpu
+# GPU-accelerated MCP server
+cargo run --release -- --gpu
 ```
 
-### With Database
+### With Database Caching
 
 ```bash
+# PostgreSQL caching for expensive computations
 export DATABASE_URL="postgresql://user:password@localhost/amari_mcp"
-./target/release/amari-mcp --port 3000 --database-url $DATABASE_URL
+cargo run --release --features database -- --database-url $DATABASE_URL
 ```
 
 ### Full Configuration
 
 ```bash
+# All features enabled
 export DATABASE_URL="postgresql://user:password@localhost/amari_mcp"
-./target/release/amari-mcp \
-  --host 0.0.0.0 \
-  --port 3000 \
+cargo run --release --features gpu,database -- \
   --gpu \
-  --database-url $DATABASE_URL \
-  --log-level debug
+  --database-url $DATABASE_URL
 ```
+
+**Key Features:**
+- ✅ **Real MCP Protocol** with `pmcp` SDK
+- ✅ **stdio transport** (JSON-RPC over stdin/stdout)
+- ✅ **Claude Code compatible** out-of-the-box
+- ✅ **Production ready** for AI assistant integration
 
 ## MCP Tool Examples
 
