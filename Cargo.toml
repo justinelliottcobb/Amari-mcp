@@ -14,11 +14,12 @@ categories = ["mathematics", "science", "algorithms", "web-programming"]
 # Core Amari library
 amari = { version = "0.9.5", features = ["gpu"] }
 
-# MCP framework - Official Rust SDK
-rmcp = { version = "0.8.0", features = ["server", "transport-io", "macros"] }
+# MCP framework - High-quality Rust SDK
+pmcp = "1.1"
 
 # Async runtime
 tokio = { version = "1.0", features = ["full"] }
+async-trait = "0.1"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

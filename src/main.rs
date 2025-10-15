@@ -5,15 +5,14 @@ use tracing::{info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod mcp_stub;
-mod mcp_real;
+// mod mcp_real;  // Disabled while implementing pmcp
+mod mcp_pmcp;
 mod server;
 mod tools;
 mod utils;
 
 #[cfg(feature = "database")]
 mod database;
-
-use server::AmariMcpServer;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -79,14 +78,17 @@ async fn main() -> Result<()> {
         None
     };
 
-    // Create and start the MCP server
-    let server = AmariMcpServer::new(
+    // Create and start the MCP server using pmcp
+    let server = mcp_pmcp::create_amari_mcp_server(
         cli.gpu,
         #[cfg(feature = "database")]
-        db_pool,
+        db_pool.is_some(),
     ).await?;
 
-    server.run(&cli.host, cli.port).await?;
+    info!("🌐 Starting MCP server with stdio transport");
+
+    // Run the server with stdio transport (MCP standard)
+    server.run_stdio().await?;
 
     Ok(())
 }
