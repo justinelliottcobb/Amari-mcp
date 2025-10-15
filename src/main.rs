@@ -5,6 +5,7 @@ use tracing::{info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod mcp_stub;
+mod mcp_real;
 mod server;
 mod tools;
 mod utils;
@@ -66,24 +67,23 @@ async fn main() -> Result<()> {
         warn!("   GPU acceleration: disabled (use --gpu to enable)");
     }
 
+    // Create database pool if configured
     #[cfg(feature = "database")]
-    if let Some(ref db_url) = cli.database_url {
+    let db_pool = if let Some(ref db_url) = cli.database_url {
         info!("   Database: {}", db_url);
-
-        // Initialize database
-        let db_pool = sqlx::PgPool::connect(db_url).await?;
-
-        // Run migrations
-        sqlx::migrate!("./migrations").run(&db_pool).await?;
-
+        let pool = sqlx::PgPool::connect(db_url).await?;
+        sqlx::migrate!("./migrations").run(&pool).await?;
         info!("   Database connected and migrations applied");
-    }
+        Some(pool)
+    } else {
+        None
+    };
 
     // Create and start the MCP server
     let server = AmariMcpServer::new(
         cli.gpu,
         #[cfg(feature = "database")]
-        cli.database_url,
+        db_pool,
     ).await?;
 
     server.run(&cli.host, cli.port).await?;
