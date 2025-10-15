@@ -4,6 +4,22 @@
 
 **MCP Implementation** - Uses `pmcp` Rust SDK with stdio transport (industry standard)
 
+## 🚀 Quick Start for Claude Code
+
+```bash
+# 1. Clone and setup
+git clone https://github.com/justinelliottcobb/amari-mcp.git
+cd amari-mcp
+
+# 2. Run automated setup
+./setup-claude-code.sh
+
+# 3. Add generated config to Claude Code
+# Copy contents of claude-code-config.json to your Claude Code MCP settings
+```
+
+**That's it!** You'll now have access to advanced mathematical tools in Claude Code sessions.
+
 ## Features
 
 ### Mathematical Domains
