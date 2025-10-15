@@ -123,13 +123,13 @@ async fn main() -> Result<()> {
                 db_pool.is_some(),
             ).await?;
 
-            info!("🌐 Starting MCP server with stdio transport");
+            info!("Starting MCP server with stdio transport");
             #[cfg(feature = "database")]
-            info!("💡 Cayley tables will use {} lookup",
-                if db_pool.is_some() { "ZERO-LATENCY database" } else { "on-demand computation" });
+            info!("Cayley tables will use {} lookup",
+                if db_pool.is_some() { "database" } else { "on-demand computation" });
 
             #[cfg(not(feature = "database"))]
-            info!("💡 Cayley tables will use on-demand computation");
+            info!("Cayley tables will use on-demand computation");
 
             // Run the server with stdio transport (MCP standard)
             server.run_stdio().await?;

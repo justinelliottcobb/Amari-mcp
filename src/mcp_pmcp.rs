@@ -197,7 +197,7 @@ struct CayleyTableHandler;
 #[async_trait]
 impl ToolHandler for CayleyTableHandler {
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
-        info!("🔧 Retrieving Cayley table with ZERO-LATENCY lookup");
+        info!("Retrieving Cayley table");
         cayley_tables::get_cayley_table(args)
             .await
             .map_err(|e| McpError::Internal(e.to_string()))

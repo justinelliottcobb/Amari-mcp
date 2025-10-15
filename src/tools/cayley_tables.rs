@@ -18,7 +18,7 @@ pub fn set_database_pool(pool: PgPool) {
 }
 
 /// Cache and retrieve Cayley tables for geometric algebra operations
-/// Now with ZERO-LATENCY database lookups for precomputed tables!
+/// Uses database lookups for precomputed tables when available
 pub async fn get_cayley_table(params: Value) -> Result<Value> {
     let start_time = Instant::now();
 
@@ -48,7 +48,7 @@ pub async fn get_cayley_table(params: Value) -> Result<Value> {
     compute_cayley_table_fallback(sig_p, sig_q, sig_r, table_id, start_time).await
 }
 
-/// Try to retrieve precomputed Cayley table from database for ZERO latency
+/// Try to retrieve precomputed Cayley table from database
 #[cfg(feature = "database")]
 async fn try_database_lookup(sig_p: i32, sig_q: i32, sig_r: i32, start_time: Instant) -> Option<Result<Value>> {
     let pool = unsafe { DB_POOL.as_ref()? };
@@ -78,7 +78,7 @@ async fn try_database_lookup(sig_p: i32, sig_q: i32, sig_r: i32, start_time: Ins
         Ok(Some(row)) => {
             let lookup_time = start_time.elapsed().as_millis() as f32;
 
-            info!("⚡ ZERO-LATENCY database hit for [{}, {}, {}] in {}ms",
+            info!("Database hit for [{}, {}, {}] in {}ms",
                 sig_p, sig_q, sig_r, lookup_time);
 
             // Decompress the table data
@@ -109,7 +109,7 @@ async fn try_database_lookup(sig_p: i32, sig_q: i32, sig_r: i32, start_time: Ins
                         "checksum": row.5,
                         "name": row.6,
                         "description": row.7,
-                        "note": "⚡ ZERO-LATENCY lookup from precomputed database"
+                        "note": "Retrieved from precomputed database"
                     })))
                 }
                 Err(e) => {

@@ -1,12 +1,12 @@
 # Amari MCP Server
 
-**Production-ready Model Context Protocol server** for the Amari mathematical computing library, providing Claude Code and other AI assistants with access to advanced geometric algebra, tropical algebra, automatic differentiation, and GPU-accelerated computations.
+**Model Context Protocol server** for the Amari mathematical computing library, providing Claude Code and other AI assistants with access to advanced geometric algebra, tropical algebra, automatic differentiation, and GPU-accelerated computations.
 
-🚀 **Real MCP Implementation** - Uses `pmcp` Rust SDK with stdio transport (industry standard)
+**MCP Implementation** - Uses `pmcp` Rust SDK with stdio transport (industry standard)
 
 ## Features
 
-### 🧮 Mathematical Domains
+### Mathematical Domains
 
 - **Geometric Algebra**: Multivector operations, geometric products, rotor rotations
 - **Tropical Algebra**: Min-plus operations, shortest path algorithms, matrix computations
@@ -15,9 +15,9 @@
 - **Information Geometry**: Fisher information matrices, statistical manifolds
 - **GPU Acceleration**: Batch processing, parallel computations
 
-### 🚀 Real MCP Tools (10+ Available)
+### MCP Tools (10+ Available)
 
-✅ **Production Ready** - All tools implemented with `pmcp` SDK and `async-trait` handlers
+All tools implemented with `pmcp` SDK and `async-trait` handlers
 
 #### Geometric Algebra
 - `create_multivector` - Create multivectors from coefficients and signatures
@@ -37,13 +37,13 @@
 #### Information Geometry
 - `fisher_information` - Compute Fisher information matrices for statistical manifolds
 
-#### ⚡ Zero-Latency Cayley Tables (Database Feature)
-- `get_cayley_table` - **ZERO-LATENCY** database lookups for precomputed tables
+#### Cayley Tables (Database Feature)
+- `get_cayley_table` - Fast database lookups for precomputed tables
 - `precompute_cayley_tables` - Precompute essential geometric algebra signatures
 - `cayley_precompute_status` - View precomputation status and performance stats
 
 #### GPU Acceleration (Optional - `--gpu` flag)
-- `gpu_batch_compute` - High-performance batch operations on GPU
+- `gpu_batch_compute` - Batch operations on GPU
 
 #### Database Caching (Optional - `--features database`)
 - `save_computation` - Cache expensive results in PostgreSQL
@@ -172,16 +172,16 @@ gpu_result = await mcp_client.call_tool("gpu_batch_compute", {
 })
 ```
 
-### ⚡ Zero-Latency Cayley Tables
+### Cayley Table Precomputation
 
-**Revolutionary Performance**: Precomputed Cayley tables provide instant access to expensive geometric algebra computations.
+Precomputed Cayley tables provide fast access to expensive geometric algebra computations.
 
 ```python
-# Get Cayley table with ZERO compute latency
+# Get Cayley table from cache or compute on-demand
 cayley_table = await mcp_client.call_tool("get_cayley_table", {
     "signature": [3, 0, 0]  # 3D Euclidean space
 })
-# Returns instantly from database cache instead of computing
+# Returns from database cache if available, otherwise computes
 
 # Check precomputation status
 status = await mcp_client.call_tool("cayley_precompute_status", {})
@@ -203,13 +203,13 @@ print(f"Storage used: {status['total_storage_mb']} MB")
 ```
 
 **Performance Impact**:
-- ❌ **Before**: 50-200ms computation per Cayley table
-- ✅ **After**: <1ms database lookup
-- 💾 **Storage**: ~20-50MB for essential signatures (3,0,0) through (5,0,0)
+- **Before**: 50-200ms computation per Cayley table
+- **After**: <1ms database lookup
+- **Storage**: ~20-50MB for essential signatures (3,0,0) through (5,0,0)
 
 ## Database Setup (Optional)
 
-**Required for Zero-Latency Cayley Tables**
+**Required for Cayley Table Caching**
 
 1. Install PostgreSQL
 2. Create database:
@@ -222,9 +222,9 @@ print(f"Storage used: {status['total_storage_mb']} MB")
    ```
 4. Migrations run automatically on startup:
    - `001_initial_schema.sql` - Basic computation caching
-   - `002_cayley_tables.sql` - **NEW**: Zero-latency Cayley table system
+   - `002_cayley_tables.sql` - Cayley table precomputation system
 
-5. Precompute essential tables for maximum performance:
+5. Precompute essential tables for improved performance:
    ```bash
    ./amari-mcp --database-url=$DATABASE_URL precompute-cayley
    ```
