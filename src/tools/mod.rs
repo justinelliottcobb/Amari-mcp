@@ -9,3 +9,6 @@ pub mod cayley_tables;
 
 #[cfg(feature = "database")]
 pub mod database;
+
+#[cfg(feature = "database")]
+pub mod cayley_precompute;
