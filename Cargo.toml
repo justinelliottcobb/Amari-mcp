@@ -19,6 +19,7 @@ pmcp = "1.1"
 
 # Async runtime
 tokio = { version = "1.0", features = ["full"] }
+tokio-util = "0.7"
 async-trait = "0.1"
 
 # Serialization
@@ -50,12 +51,20 @@ default = []
 database = ["dep:sqlx"]
 gpu = ["amari/gpu"]
 
+[lib]
+name = "amari_mcp"
+path = "src/lib.rs"
+
 [[bin]]
 name = "amari-mcp"
 path = "src/main.rs"
 
 [dev-dependencies]
 approx = "0.5"
+tokio-test = "0.4"
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json"] }
+tempfile = "3.0"
+serial_test = "3.0"
 
 [workspace]
 # Empty workspace table to prevent this from being part of parent workspace

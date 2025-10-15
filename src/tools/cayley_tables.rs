@@ -280,3 +280,175 @@ pub async fn clear_cayley_cache(params: Value) -> Result<Value> {
         "note": "Stub implementation - requires database feature"
     }))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use approx::assert_relative_eq;
+
+    #[tokio::test]
+    async fn test_get_cayley_table_basic() {
+        let params = json!({
+            "signature": [3, 0, 0]
+        });
+
+        let result = get_cayley_table(params).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response["success"], true);
+        assert_eq!(response["signature"], json!([3, 0, 0]));
+        assert_eq!(response["basis_count"], 8); // 2^3 = 8 for 3D
+        assert!(response["cayley_table"].is_array());
+        assert_eq!(response["source"], "computed"); // No database, so computed
+    }
+
+    #[tokio::test]
+    async fn test_get_cayley_table_different_signatures() {
+        let test_cases = vec![
+            ([2, 0, 0], 4),  // 2D Euclidean
+            ([1, 1, 0], 4),  // 2D Minkowski
+            ([4, 0, 0], 16), // 4D Euclidean
+        ];
+
+        for (signature, expected_basis_count) in test_cases {
+            let params = json!({
+                "signature": signature
+            });
+
+            let result = get_cayley_table(params).await;
+            assert!(result.is_ok());
+
+            let response = result.unwrap();
+            assert_eq!(response["success"], true);
+            assert_eq!(response["signature"], json!(signature));
+            assert_eq!(response["basis_count"], expected_basis_count);
+            assert!(response["cayley_table"].is_array());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_cayley_table_invalid_signature() {
+        let params = json!({
+            "signature": "invalid"
+        });
+
+        let result = get_cayley_table(params).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_get_cayley_table_missing_signature() {
+        let params = json!({});
+
+        let result = get_cayley_table(params).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_get_cayley_table_force_recompute() {
+        let params = json!({
+            "signature": [3, 0, 0],
+            "force_recompute": true
+        });
+
+        let result = get_cayley_table(params).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response["success"], true);
+        assert_eq!(response["source"], "computed"); // Should be computed due to force flag
+    }
+
+    #[tokio::test]
+    async fn test_cayley_table_structure() {
+        let params = json!({
+            "signature": [2, 0, 0]
+        });
+
+        let result = get_cayley_table(params).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        let table = &response["cayley_table"];
+        let basis_count = response["basis_count"].as_u64().unwrap() as usize;
+
+        // Verify 3D structure: table[i][j][k] where each dimension is basis_count
+        assert!(table.is_array());
+        let outer_array = table.as_array().unwrap();
+        assert_eq!(outer_array.len(), basis_count);
+
+        for i in 0..basis_count {
+            assert!(outer_array[i].is_array());
+            let middle_array = outer_array[i].as_array().unwrap();
+            assert_eq!(middle_array.len(), basis_count);
+
+            for j in 0..basis_count {
+                assert!(middle_array[j].is_array());
+                let inner_array = middle_array[j].as_array().unwrap();
+                assert_eq!(inner_array.len(), basis_count);
+
+                // All values should be numbers
+                for k in 0..basis_count {
+                    assert!(inner_array[k].is_number());
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_cayley_table_identity_property() {
+        let params = json!({
+            "signature": [2, 0, 0]
+        });
+
+        let result = get_cayley_table(params).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        let table = &response["cayley_table"];
+
+        // Basic check: scalar (index 0) multiplication should preserve identity
+        // table[0][0][0] should be 1.0 (scalar * scalar = scalar)
+        let scalar_mult = table[0][0][0].as_f64().unwrap();
+        assert_relative_eq!(scalar_mult, 1.0, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn test_decompress_table_data() {
+        // Test data decompression
+        let test_data: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0];
+        let mut compressed = Vec::new();
+
+        // Convert to bytes (simple implementation)
+        for value in &test_data {
+            compressed.extend_from_slice(&value.to_le_bytes());
+        }
+
+        let decompressed = decompress_table_data(&compressed).unwrap();
+        assert_eq!(decompressed, test_data);
+    }
+
+    #[test]
+    fn test_reconstruct_3d_table() {
+        let basis_count = 2;
+        let flat_data = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
+
+        let table = reconstruct_3d_table(&flat_data, basis_count);
+
+        assert_eq!(table.len(), basis_count);
+        assert_eq!(table[0].len(), basis_count);
+        assert_eq!(table[0][0].len(), basis_count);
+
+        // Check that reconstruction works correctly
+        assert_eq!(table[0][0][0], 1.0);
+        assert_eq!(table[0][0][1], 2.0);
+        assert_eq!(table[0][1][0], 3.0);
+        assert_eq!(table[0][1][1], 4.0);
+        assert_eq!(table[1][0][0], 5.0);
+        assert_eq!(table[1][0][1], 6.0);
+        assert_eq!(table[1][1][0], 7.0);
+        assert_eq!(table[1][1][1], 8.0);
+    }
+}

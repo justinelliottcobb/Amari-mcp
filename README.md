@@ -239,24 +239,42 @@ print(f"Storage used: {status['total_storage_mb']} MB")
 
 ## Development
 
-### Running Tests
+### Building and Running
 
 ```bash
-cargo test
+# Build with all features
+cargo build --features database,gpu
+
+# Run the server
+cargo run --features database -- --database-url=postgresql://user:password@localhost/amari_mcp
 ```
 
-### With GPU Tests
+### Test Suite
+
+The project includes comprehensive tests:
+
+- **Unit Tests**: 18 tests covering core functionality
+- **Integration Tests**: Database migration and precomputation tests
+- **CI/CD**: GitHub Actions with PostgreSQL service
 
 ```bash
-cargo test --features gpu
-```
+# Quick unit tests (no database required)
+cargo test --lib
 
-### Database Tests
-
-```bash
-export DATABASE_URL="postgresql://localhost/amari_mcp_test"
+# Database tests (requires PostgreSQL)
+export TEST_DATABASE_URL="postgres://postgres:postgres@localhost:5432/amari_mcp_test"
 cargo test --features database
+
+# Run comprehensive test script
+./test.sh
 ```
+
+Test coverage includes:
+- Cayley table computation and caching
+- MCP tool handlers and error handling
+- Database migrations and schema validation
+- Performance and data integrity checks
+
 
 ## Architecture
 
