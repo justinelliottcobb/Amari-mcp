@@ -14,28 +14,12 @@ jobs:
     name: Test Suite
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: amari_mcp_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     strategy:
       matrix:
         rust: [stable]
         features:
           - ""
-          - "database"
-          - "database,gpu"
+          - "gpu"
 
     steps:
     - uses: actions/checkout@v4
@@ -72,14 +56,7 @@ jobs:
     - name: Build
       run: cargo build --verbose --features "${{ matrix.features }}"
 
-    - name: Run tests (no database)
-      if: "!contains(matrix.features, 'database')"
-      run: cargo test --verbose --features "${{ matrix.features }}"
-
-    - name: Run tests (with database)
-      if: contains(matrix.features, 'database')
-      env:
-        TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/amari_mcp_test
+    - name: Run tests
       run: cargo test --verbose --features "${{ matrix.features }}"
 
   security:
@@ -96,21 +73,6 @@ jobs:
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: amari_mcp_coverage
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
     - uses: actions/checkout@v4
@@ -136,9 +98,7 @@ jobs:
       uses: taiki-e/install-action@cargo-llvm-cov
 
     - name: Generate code coverage
-      env:
-        TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/amari_mcp_coverage
-      run: cargo llvm-cov --features database --lcov --output-path lcov.info
+      run: cargo llvm-cov --all-features --lcov --output-path lcov.info
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -152,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        features: ["", "database"]
+        features: ["", "gpu"]
 
     steps:
     - uses: actions/checkout@v4
@@ -167,7 +127,6 @@ jobs:
       run: cargo build --release --features "${{ matrix.features }}"
 
     - name: Test release build
-      if: "!contains(matrix.features, 'database')"
       run: cargo test --release --features "${{ matrix.features }}"
 
   docs:

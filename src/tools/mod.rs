@@ -7,8 +7,4 @@ pub mod gpu;
 pub mod info_geometry;
 pub mod tropical;
 
-#[cfg(feature = "database")]
-pub mod database;
-
-#[cfg(feature = "database")]
-pub mod cayley_precompute;
+// Database modules removed - MCP servers should be simple and stateless

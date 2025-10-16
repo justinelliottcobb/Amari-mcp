@@ -137,61 +137,7 @@ impl ToolHandler for GpuBatchHandler {
     }
 }
 
-/// Tool handler for saving computations to database
-#[cfg(feature = "database")]
-pub struct SaveComputationHandler {
-    db_available: bool,
-}
-
-#[cfg(feature = "database")]
-impl SaveComputationHandler {
-    pub fn new(db_available: bool) -> Self {
-        Self { db_available }
-    }
-}
-
-#[cfg(feature = "database")]
-#[async_trait]
-impl ToolHandler for SaveComputationHandler {
-    async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
-        if !self.db_available {
-            return Err(McpError::Internal("Database not configured".to_string()));
-        }
-
-        info!("🔧 Saving computation to database");
-        database::save_computation(args)
-            .await
-            .map_err(|e| McpError::Internal(e.to_string()))
-    }
-}
-
-/// Tool handler for loading computations from database
-#[cfg(feature = "database")]
-pub struct LoadComputationHandler {
-    db_available: bool,
-}
-
-#[cfg(feature = "database")]
-impl LoadComputationHandler {
-    pub fn new(db_available: bool) -> Self {
-        Self { db_available }
-    }
-}
-
-#[cfg(feature = "database")]
-#[async_trait]
-impl ToolHandler for LoadComputationHandler {
-    async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
-        if !self.db_available {
-            return Err(McpError::Internal("Database not configured".to_string()));
-        }
-
-        info!("🔧 Loading computation from database");
-        database::load_computation(args)
-            .await
-            .map_err(|e| McpError::Internal(e.to_string()))
-    }
-}
+// Database handlers removed - MCP servers should be simple and stateless
 
 /// Tool handler for Cayley table operations
 pub struct CayleyTableHandler;
@@ -206,72 +152,8 @@ impl ToolHandler for CayleyTableHandler {
     }
 }
 
-/// Tool handler for precomputing essential Cayley tables
-#[cfg(feature = "database")]
-pub struct PrecomputeTablesHandler {
-    db_available: bool,
-}
-
-#[cfg(feature = "database")]
-impl PrecomputeTablesHandler {
-    pub fn new(db_available: bool) -> Self {
-        Self { db_available }
-    }
-}
-
-#[cfg(feature = "database")]
-#[async_trait]
-impl ToolHandler for PrecomputeTablesHandler {
-    async fn handle(&self, _args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
-        if !self.db_available {
-            return Err(McpError::Internal("Database not configured".to_string()));
-        }
-
-        info!("🧮 Precomputing essential Cayley tables");
-        // This is a placeholder - would need access to the database pool
-        // In practice, this would be called during server initialization
-        Ok(serde_json::json!({
-            "success": true,
-            "note": "Precomputation should be run during server initialization with database access"
-        }))
-    }
-}
-
-/// Tool handler for getting precomputation status
-#[cfg(feature = "database")]
-pub struct PrecomputeStatusHandler {
-    db_available: bool,
-}
-
-#[cfg(feature = "database")]
-impl PrecomputeStatusHandler {
-    pub fn new(db_available: bool) -> Self {
-        Self { db_available }
-    }
-}
-
-#[cfg(feature = "database")]
-#[async_trait]
-impl ToolHandler for PrecomputeStatusHandler {
-    async fn handle(&self, _args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
-        if !self.db_available {
-            return Err(McpError::Internal("Database not configured".to_string()));
-        }
-
-        info!("📊 Getting Cayley table precomputation status");
-        // This is a placeholder - would need access to the database pool
-        Ok(serde_json::json!({
-            "success": true,
-            "note": "Status check requires database pool access"
-        }))
-    }
-}
-
 /// Create and configure the Amari MCP server
-pub async fn create_amari_mcp_server(
-    gpu_enabled: bool,
-    #[cfg(feature = "database")] db_available: bool,
-) -> Result<Server> {
+pub async fn create_amari_mcp_server(gpu_enabled: bool) -> Result<Server> {
     info!("🧮 Creating Amari MCP Server with pmcp");
 
     let mut server_builder = Server::builder()
@@ -298,28 +180,7 @@ pub async fn create_amari_mcp_server(
             server_builder.tool("gpu_batch_compute", GpuBatchHandler::new(gpu_enabled));
     }
 
-    // Add database tools if enabled
-    #[cfg(feature = "database")]
-    if db_available {
-        info!("   💾 Adding database tools and Cayley table management");
-        server_builder = server_builder
-            .tool(
-                "save_computation",
-                SaveComputationHandler::new(db_available),
-            )
-            .tool(
-                "load_computation",
-                LoadComputationHandler::new(db_available),
-            )
-            .tool(
-                "precompute_cayley_tables",
-                PrecomputeTablesHandler::new(db_available),
-            )
-            .tool(
-                "cayley_precompute_status",
-                PrecomputeStatusHandler::new(db_available),
-            );
-    }
+    // Database tools removed - caching should be handled by Amari core library
 
     let server = server_builder
         .build()
@@ -351,12 +212,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_amari_mcp_server() {
-        let server_result = create_amari_mcp_server(
-            false, // GPU disabled
-            #[cfg(feature = "database")]
-            false, // DB disabled
-        )
-        .await;
+        let server_result = create_amari_mcp_server(false).await;
 
         assert!(server_result.is_ok());
     }
@@ -430,42 +286,5 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[cfg(feature = "database")]
-    mod database_tests {
-        use super::*;
-
-        #[tokio::test]
-        async fn test_save_computation_handler_disabled() {
-            let handler = SaveComputationHandler::new(false); // DB disabled
-            let args = json!({
-                "id": "test-computation",
-                "result": {"value": 42},
-                "metadata": {"type": "test"}
-            });
-
-            let result = handler.handle(args, mock_extra()).await;
-            assert!(result.is_err());
-
-            if let Err(pmcp::Error::Internal(msg)) = result {
-                assert!(msg.contains("Database not configured"));
-            } else {
-                panic!("Expected Internal error with specific message");
-            }
-        }
-
-        #[tokio::test]
-        async fn test_precompute_tables_handler_disabled() {
-            let handler = PrecomputeTablesHandler::new(false); // DB disabled
-            let args = json!({});
-
-            let result = handler.handle(args, mock_extra()).await;
-            assert!(result.is_err());
-
-            if let Err(pmcp::Error::Internal(msg)) = result {
-                assert!(msg.contains("Database not configured"));
-            } else {
-                panic!("Expected Internal error with specific message");
-            }
-        }
-    }
+    // Database tests removed - MCP servers should be simple and stateless
 }

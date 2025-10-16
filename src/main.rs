@@ -11,8 +11,7 @@ mod mcp_pmcp;
 mod tools;
 mod utils;
 
-#[cfg(feature = "database")]
-mod database;
+// Database module removed - MCP servers should be simple and stateless
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -32,11 +31,6 @@ struct Cli {
     #[arg(long)]
     gpu: bool,
 
-    /// Database URL for persistent storage (requires database feature)
-    #[cfg(feature = "database")]
-    #[arg(long)]
-    database_url: Option<String>,
-
     /// Configuration file path
     #[arg(short, long)]
     config: Option<PathBuf>,
@@ -50,26 +44,6 @@ struct Cli {
 enum Command {
     /// Start the MCP server (default)
     Serve,
-
-    /// Precompute and store essential Cayley tables
-    #[cfg(feature = "database")]
-    PrecomputeCayley {
-        /// Force recomputation even if tables exist
-        #[arg(long)]
-        force: bool,
-    },
-
-    /// Show Cayley table precomputation status
-    #[cfg(feature = "database")]
-    CayleyStatus,
-
-    /// Clear all precomputed Cayley tables
-    #[cfg(feature = "database")]
-    CayleyClear {
-        /// Skip confirmation prompt
-        #[arg(long)]
-        yes: bool,
-    },
 }
 
 #[tokio::main]
@@ -95,102 +69,19 @@ async fn main() -> Result<()> {
         warn!("   GPU acceleration: disabled (use --gpu to enable)");
     }
 
-    // Create database pool if configured
-    #[cfg(feature = "database")]
-    let db_pool = if let Some(ref db_url) = cli.database_url {
-        info!("   Database: {}", db_url);
-        let pool = sqlx::PgPool::connect(db_url).await?;
-        // Note: Manual migration setup would go here if needed
-        // For now, migrations should be run manually via `cargo sqlx migrate run`
-        info!("   Database connected and migrations applied");
-        Some(pool)
-    } else {
-        None
-    };
+    // Database support removed - MCP servers should be simple and stateless
 
     // Handle subcommands
     match cli.command.as_ref().unwrap_or(&Command::Serve) {
         Command::Serve => {
-            // Set up database pool for Cayley table lookups if available
-            #[cfg(feature = "database")]
-            if let Some(pool) = &db_pool {
-                tools::cayley_tables::set_database_pool(pool.clone());
-            }
-
             // Create and start the MCP server using pmcp
-            let server = mcp_pmcp::create_amari_mcp_server(
-                cli.gpu,
-                #[cfg(feature = "database")]
-                db_pool.is_some(),
-            )
-            .await?;
+            let server = mcp_pmcp::create_amari_mcp_server(cli.gpu).await?;
 
             info!("Starting MCP server with stdio transport");
-            #[cfg(feature = "database")]
-            info!(
-                "Cayley tables will use {} lookup",
-                if db_pool.is_some() {
-                    "database"
-                } else {
-                    "on-demand computation"
-                }
-            );
-
-            #[cfg(not(feature = "database"))]
             info!("Cayley tables will use on-demand computation");
 
             // Run the server with stdio transport (MCP standard)
             server.run_stdio().await?;
-        }
-
-        #[cfg(feature = "database")]
-        Command::PrecomputeCayley { force } => {
-            if let Some(pool) = db_pool {
-                info!("🧮 Starting Cayley table precomputation (force: {})", force);
-                let result = tools::cayley_precompute::precompute_essential_tables(&pool).await?;
-                println!("{}", serde_json::to_string_pretty(&result)?);
-            } else {
-                return Err(anyhow::anyhow!(
-                    "Database URL required for precomputation. Use --database-url"
-                ));
-            }
-        }
-
-        #[cfg(feature = "database")]
-        Command::CayleyStatus => {
-            if let Some(pool) = db_pool {
-                info!("📊 Getting Cayley table precomputation status");
-                let result = tools::cayley_precompute::get_precomputation_status(&pool).await?;
-                println!("{}", serde_json::to_string_pretty(&result)?);
-            } else {
-                return Err(anyhow::anyhow!(
-                    "Database URL required for status check. Use --database-url"
-                ));
-            }
-        }
-
-        #[cfg(feature = "database")]
-        Command::CayleyClear { yes } => {
-            if let Some(pool) = db_pool {
-                if !yes {
-                    print!("Are you sure you want to clear all precomputed Cayley tables? [y/N]: ");
-                    use std::io::{self, Write};
-                    io::stdout().flush()?;
-                    let mut input = String::new();
-                    io::stdin().read_line(&mut input)?;
-                    if !input.trim().to_lowercase().starts_with('y') {
-                        info!("Cancelled");
-                        return Ok(());
-                    }
-                }
-                info!("🗑️  Clearing all precomputed Cayley tables");
-                let result = tools::cayley_precompute::clear_precomputed_tables(&pool).await?;
-                println!("{}", serde_json::to_string_pretty(&result)?);
-            } else {
-                return Err(anyhow::anyhow!(
-                    "Database URL required for clearing tables. Use --database-url"
-                ));
-            }
         }
     }
 
