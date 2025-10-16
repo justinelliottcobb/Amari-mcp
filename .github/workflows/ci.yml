@@ -11,23 +11,19 @@ env:
 
 jobs:
   test:
-    name: Test Suite
+    name: Test & Build
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        rust: [stable]
-        features:
-          - ""
-          - "gpu"
+        features: ["", "gpu"]
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@master
+      uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: ${{ matrix.rust }}
         components: rustfmt, clippy
 
     - name: Cache cargo registry
@@ -37,10 +33,7 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
-        key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-${{ matrix.rust }}-
-          ${{ runner.os }}-cargo-
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Install system dependencies
       run: |
@@ -53,83 +46,18 @@ jobs:
     - name: Run clippy
       run: cargo clippy --all-targets --features "${{ matrix.features }}" -- -D warnings
 
-    - name: Build
-      run: cargo build --verbose --features "${{ matrix.features }}"
-
-    - name: Run tests
-      run: cargo test --verbose --features "${{ matrix.features }}"
-
-  security:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: dtolnay/rust-toolchain@stable
-    - name: Install cargo-audit
-      run: cargo install cargo-audit
-    - name: Run security audit
-      run: cargo audit
-
-  coverage:
-    name: Code Coverage
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Ensure full repository is checked out
-    - uses: dtolnay/rust-toolchain@stable
-      with:
-        components: llvm-tools-preview
-
-    - name: Verify repository structure
+    - name: Build and test
       run: |
-        pwd
-        ls -la
-        ls -la migrations/ || echo "migrations directory not found"
-        echo "CARGO_MANIFEST_DIR would be: $(pwd)"
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libssl-dev pkg-config
-
-    - name: Install cargo-llvm-cov
-      uses: taiki-e/install-action@cargo-llvm-cov
-
-    - name: Generate code coverage
-      run: cargo llvm-cov --all-features --lcov --output-path lcov.info
-
-    - name: Display coverage summary
-      run: |
-        echo "Code coverage generated successfully"
-        ls -la lcov.info
-
-  build-release:
-    name: Build Release
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        features: ["", "gpu"]
-
-    steps:
-    - uses: actions/checkout@v4
-    - uses: dtolnay/rust-toolchain@stable
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libssl-dev pkg-config
+        cargo build --verbose --features "${{ matrix.features }}"
+        cargo test --verbose --features "${{ matrix.features }}"
 
     - name: Build release
       run: cargo build --release --features "${{ matrix.features }}"
 
-    - name: Test release build
-      run: cargo test --release --features "${{ matrix.features }}"
-
-  docs:
-    name: Documentation
+  security-and-docs:
+    name: Security & Documentation
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@stable
@@ -138,6 +66,12 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libssl-dev pkg-config
+
+    - name: Install cargo-audit
+      run: cargo install cargo-audit
+
+    - name: Run security audit
+      run: cargo audit
 
     - name: Build documentation
       run: cargo doc --all-features --no-deps --document-private-items
