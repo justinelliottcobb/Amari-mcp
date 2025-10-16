@@ -29,6 +29,12 @@ mod migration_tests {
             statements.push(stmt.to_string());
         }
 
+        // Debug: show all parsed statements first
+        eprintln!("Total statements parsed: {}", statements.len());
+        for (i, statement) in statements.iter().enumerate() {
+            eprintln!("Statement {}: {}", i, statement.lines().next().unwrap_or("").trim());
+        }
+
         // Execute each statement
         for (i, statement) in statements.iter().enumerate() {
             eprintln!(
