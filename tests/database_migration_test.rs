@@ -6,10 +6,14 @@ mod migration_tests {
 
     async fn execute_migration_sql(pool: &PgPool, migration_sql: &str) -> Result<(), sqlx::Error> {
         // Split migration into individual statements and execute each one
-        for statement in migration_sql.split(';') {
+        for (i, statement) in migration_sql.split(';').enumerate() {
             let statement = statement.trim();
             if !statement.is_empty() && !statement.starts_with("--") {
-                sqlx::query(statement).execute(pool).await?;
+                eprintln!("Executing statement {}: {}", i, statement.lines().next().unwrap_or("").trim());
+                if let Err(e) = sqlx::query(statement).execute(pool).await {
+                    eprintln!("Failed statement: {}", statement);
+                    return Err(e);
+                }
             }
         }
         Ok(())
@@ -19,7 +23,7 @@ mod migration_tests {
         let database_url = env::var("TEST_DATABASE_URL").ok()?;
         let pool = PgPool::connect(&database_url).await.ok()?;
 
-        // Drop all tables to start fresh
+        // Drop all tables to start fresh (order matters due to foreign keys)
         let _ = sqlx::query("DROP TABLE IF EXISTS cayley_usage_stats CASCADE")
             .execute(&pool)
             .await;
@@ -29,16 +33,16 @@ mod migration_tests {
         let _ = sqlx::query("DROP TABLE IF EXISTS precomputed_signatures CASCADE")
             .execute(&pool)
             .await;
-        let _ = sqlx::query("DROP TABLE IF EXISTS computations CASCADE")
-            .execute(&pool)
-            .await;
-        let _ = sqlx::query("DROP TABLE IF EXISTS computation_sessions CASCADE")
+        let _ = sqlx::query("DROP TABLE IF EXISTS performance_metrics CASCADE")
             .execute(&pool)
             .await;
         let _ = sqlx::query("DROP TABLE IF EXISTS session_computations CASCADE")
             .execute(&pool)
             .await;
-        let _ = sqlx::query("DROP TABLE IF EXISTS performance_metrics CASCADE")
+        let _ = sqlx::query("DROP TABLE IF EXISTS computation_sessions CASCADE")
+            .execute(&pool)
+            .await;
+        let _ = sqlx::query("DROP TABLE IF EXISTS computations CASCADE")
             .execute(&pool)
             .await;
 
