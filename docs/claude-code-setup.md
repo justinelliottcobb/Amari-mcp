@@ -1,31 +1,44 @@
-# Claude Code Integration Guide
+# Claude Code Setup Guide
 
 ## Quick Start: Local Development
 
-### 1. Build and Run Locally
+### 1. Build and Run
 
 ```bash
 # In your amari-mcp directory
-cargo build --release --features database,gpu
+cargo build --release
 
-# Run with database (optional)
-export DATABASE_URL="postgresql://user:password@localhost/amari_mcp"
-./target/release/amari-mcp --database-url=$DATABASE_URL
-
-# Or run without database
+# Run basic MCP server
 ./target/release/amari-mcp
+
+# Or run with GPU acceleration
+cargo build --release --features gpu
+./target/release/amari-mcp --gpu
 ```
 
 ### 2. Claude Code Configuration
 
-In Claude Code, you can connect to your local MCP server using the stdio transport:
+In Claude Code, connect to your local MCP server using stdio transport:
 
+#### Basic Configuration
 ```json
 {
   "mcpServers": {
     "amari": {
       "command": "/path/to/amari-mcp/target/release/amari-mcp",
-      "args": ["--database-url", "postgresql://user:password@localhost/amari_mcp"],
+      "args": []
+    }
+  }
+}
+```
+
+#### With GPU Acceleration
+```json
+{
+  "mcpServers": {
+    "amari": {
+      "command": "/path/to/amari-mcp/target/release/amari-mcp",
+      "args": ["--gpu"],
       "env": {
         "RUST_LOG": "info"
       }
@@ -38,36 +51,33 @@ In Claude Code, you can connect to your local MCP server using the stdio transpo
 
 Once connected, you'll have access to these tools in Claude Code:
 
-#### Geometric Algebra
+#### Core Mathematical Operations
 - `create_multivector` - Create multivectors from coefficients
 - `geometric_product` - Compute geometric products
 - `rotor_rotation` - Apply rotor rotations
-- `get_cayley_table` - Fast Cayley table lookup/computation
-
-#### Mathematical Operations
+- `get_cayley_table` - On-demand Cayley table computation
 - `tropical_matrix_multiply` - Min-plus operations
 - `shortest_path` - Graph algorithms via tropical algebra
 - `compute_gradient` - Automatic differentiation
 - `ca_evolution` - Cellular automata evolution
 - `fisher_information` - Information geometry calculations
 
-#### Database Features (if enabled)
-- `precompute_cayley_tables` - Precompute essential tables
-- `cayley_precompute_status` - View cache status
-- `save_computation` / `load_computation` - Result caching
+#### GPU Acceleration (with `--gpu` flag)
+- `gpu_batch_compute` - High-performance batch operations
 
 ## Production Deployment Options
 
-### Option 1: Local Binary (Recommended for Development)
+### Option 1: Local Binary (Recommended)
 
 **Pros:**
+- Simple setup - no database configuration needed
 - Immediate setup
 - Full performance
 - No network latency
 - Easy debugging
 
 **Setup:**
-1. Build release binary
+1. Build release binary: `cargo build --release`
 2. Configure Claude Code to use local path
 3. Run when needed
 
@@ -79,13 +89,13 @@ For always-on local service:
 # /etc/systemd/system/amari-mcp.service
 [Unit]
 Description=Amari MCP Server
-After=network.target postgresql.service
+After=network.target
 
 [Service]
 Type=simple
 User=amari
 WorkingDirectory=/opt/amari-mcp
-ExecStart=/opt/amari-mcp/amari-mcp --database-url=postgresql://amari:password@localhost/amari_mcp
+ExecStart=/opt/amari-mcp/amari-mcp
 Restart=always
 Environment=RUST_LOG=info
 
@@ -100,12 +110,11 @@ WantedBy=multi-user.target
 FROM rust:1.75 as builder
 WORKDIR /app
 COPY . .
-RUN cargo build --release --features database
+RUN cargo build --release --features gpu
 
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y libssl3 ca-certificates
+RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/release/amari-mcp /usr/local/bin/
-EXPOSE 3000
 CMD ["amari-mcp"]
 ```
 
@@ -120,43 +129,16 @@ app = "amari-mcp"
   dockerfile = "Dockerfile"
 
 [[services]]
-  http_checks = []
-  internal_port = 3000
+  internal_port = 8080
   processes = ["app"]
   protocol = "tcp"
 ```
 
-#### AWS Lambda (Serverless)
-Not recommended due to MCP's persistent connection requirements.
+**Note:** MCP servers use stdio transport, so they work best as local binaries or containerized services accessed via SSH.
 
-## Database Setup
+## Configuration Examples
 
-### Local PostgreSQL
-
-```bash
-# Install PostgreSQL
-sudo apt install postgresql postgresql-contrib  # Ubuntu
-brew install postgresql                         # macOS
-
-# Create database
-sudo -u postgres createdb amari_mcp
-sudo -u postgres psql -c "CREATE USER amari WITH PASSWORD 'secure_password';"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE amari_mcp TO amari;"
-
-# Set connection string
-export DATABASE_URL="postgresql://amari:secure_password@localhost/amari_mcp"
-```
-
-### Cloud Database
-
-```bash
-# Example: Digital Ocean Managed PostgreSQL
-export DATABASE_URL="postgresql://user:password@db-cluster.db.ondigitalocean.com:25060/amari_mcp?sslmode=require"
-```
-
-## Claude Code Configuration Examples
-
-### Basic Configuration (No Database)
+### Basic Configuration
 ```json
 {
   "mcpServers": {
@@ -167,17 +149,13 @@ export DATABASE_URL="postgresql://user:password@db-cluster.db.ondigitalocean.com
 }
 ```
 
-### Full Configuration (With Database & GPU)
+### GPU Acceleration Enabled
 ```json
 {
   "mcpServers": {
     "amari": {
       "command": "/usr/local/bin/amari-mcp",
-      "args": [
-        "--database-url", "postgresql://user:password@localhost/amari_mcp",
-        "--gpu",
-        "--log-level", "info"
-      ],
+      "args": ["--gpu", "--log-level", "info"],
       "env": {
         "RUST_LOG": "amari_mcp=info"
       }
@@ -194,7 +172,7 @@ export DATABASE_URL="postgresql://user:password@db-cluster.db.ondigitalocean.com
       "command": "ssh",
       "args": [
         "user@remote-server",
-        "/opt/amari-mcp/amari-mcp --database-url=postgresql://..."
+        "/opt/amari-mcp/amari-mcp"
       ]
     }
   }
@@ -203,49 +181,77 @@ export DATABASE_URL="postgresql://user:password@db-cluster.db.ondigitalocean.com
 
 ## Performance Optimization
 
-### Precompute Cayley Tables
-```bash
-# One-time setup for fast lookups
-./amari-mcp --database-url=$DATABASE_URL precompute-cayley
-
-# Check status
-./amari-mcp --database-url=$DATABASE_URL cayley-status
-```
-
 ### GPU Acceleration
 ```bash
 # Enable GPU features (requires CUDA/ROCm)
-./amari-mcp --gpu --database-url=$DATABASE_URL
+cargo build --release --features gpu
+./amari-mcp --gpu
 ```
+
+### On-demand Computation
+The server is optimized for interactive use with fast on-demand computation:
+- Cayley tables computed in milliseconds
+- No database setup required
+- Immediate startup
+- Stateless design
 
 ## Troubleshooting
 
+### Server Won't Start
+```bash
+# Check build
+cargo build --release
+
+# Try basic run with verbose logging
+RUST_LOG=debug ./target/release/amari-mcp
+```
+
+### GPU Acceleration Issues
+```bash
+# Check GPU availability
+cargo run --features gpu -- --gpu
+
+# Fall back to CPU if GPU not available
+cargo run --release
+```
+
 ### Connection Issues
-1. Check that the binary is executable
-2. Verify database connection string
-3. Check firewall/port settings
-4. Review logs: `RUST_LOG=debug ./amari-mcp`
+1. Check that the binary path is correct in Claude Code config
+2. Verify the binary is executable: `chmod +x target/release/amari-mcp`
+3. Check logs: `RUST_LOG=debug ./amari-mcp`
+4. Ensure no firewall blocking (though MCP uses stdio, not network)
 
 ### Performance Issues
-1. Precompute Cayley tables for common signatures
-2. Enable GPU acceleration if available
-3. Use database caching for expensive computations
-4. Monitor memory usage with large computations
+1. Use `--gpu` flag for large computations
+2. Consider batch operations with `gpu_batch_compute`
+3. Monitor CPU/memory usage for large mathematical operations
 
 ### Common Errors
-- **"Database not configured"**: Add `--database-url` parameter
-- **"GPU acceleration not enabled"**: Add `--gpu` flag and check drivers
-- **"Permission denied"**: Check binary permissions and user access
+- **"Binary not found"**: Check path in Claude Code configuration
+- **"GPU acceleration not enabled"**: Add `--gpu` flag and verify drivers
+- **"Permission denied"**: Make binary executable and check user permissions
 
 ## Security Considerations
 
 ### Local Development
 - MCP uses stdio transport (secure by default)
-- No network exposure
-- Database credentials in environment variables
+- No network exposure - communication only via stdin/stdout
+- No database credentials to manage
 
 ### Production Deployment
-- Use strong database passwords
-- Enable SSL for database connections
 - Run as dedicated user with minimal privileges
-- Regular security updates for dependencies
+- Keep binary updated with latest Amari and security patches
+- Use containerization for isolation if needed
+- For remote deployment, use SSH with proper key management
+
+## Design Philosophy
+
+This MCP server follows a **simple, stateless design philosophy**:
+
+- **No database setup required** - just build and run
+- **Fast startup** - no migrations or complex initialization
+- **On-demand computation** - operations computed when requested
+- **Interactive optimization** - designed for Claude Code sessions
+- **Minimal dependencies** - focused on core mathematical operations
+
+This makes it perfect for development workflows where you want mathematical tools available instantly without complex setup procedures.
