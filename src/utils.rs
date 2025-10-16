@@ -4,6 +4,7 @@ use serde_json::Value;
 /// Utility functions for the Amari MCP server
 
 /// Validate multivector coefficients for given signature
+#[allow(dead_code)]
 pub fn validate_multivector_coefficients(
     coefficients: &[f64],
     signature: &[usize; 3],
@@ -23,6 +24,7 @@ pub fn validate_multivector_coefficients(
 }
 
 /// Parse signature from JSON value with defaults
+#[allow(dead_code)]
 pub fn parse_signature(value: Option<&Value>) -> [usize; 3] {
     if let Some(sig_array) = value.and_then(|v| v.as_array()) {
         [
@@ -36,6 +38,7 @@ pub fn parse_signature(value: Option<&Value>) -> [usize; 3] {
 }
 
 /// Convert f64 to JSON value, handling infinities and NaNs
+#[allow(dead_code)]
 pub fn float_to_json(value: f64) -> Value {
     if value.is_infinite() {
         if value.is_sign_positive() {
@@ -51,6 +54,7 @@ pub fn float_to_json(value: f64) -> Value {
 }
 
 /// Convert matrix to JSON, handling special float values
+#[allow(dead_code)]
 pub fn matrix_to_json(matrix: &[Vec<f64>]) -> Value {
     let json_matrix: Vec<Vec<Value>> = matrix
         .iter()

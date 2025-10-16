@@ -4,10 +4,10 @@ use std::path::PathBuf;
 use tracing::{info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-mod mcp_stub;
+// mod mcp_stub;  // Legacy stub implementation, replaced by pmcp
 // mod mcp_real;  // Disabled while implementing pmcp
 mod mcp_pmcp;
-mod server;
+// mod server;    // Legacy server implementation, replaced by pmcp
 mod tools;
 mod utils;
 

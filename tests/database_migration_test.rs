@@ -32,7 +32,7 @@ mod migration_tests {
             // Run the first migration manually
             let migration_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
                 .join("migrations")
-                .join("001_initial_schema.sql");
+                .join("001_initial.sql");
             let migration_sql = std::fs::read_to_string(&migration_path).unwrap();
             let result = sqlx::query(&migration_sql).execute(&pool).await;
             assert!(result.is_ok());
@@ -80,7 +80,7 @@ mod migration_tests {
             // Run both migrations manually
             let migration_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
             let migration1_sql =
-                std::fs::read_to_string(migration_dir.join("001_initial_schema.sql")).unwrap();
+                std::fs::read_to_string(migration_dir.join("001_initial.sql")).unwrap();
             let migration2_sql =
                 std::fs::read_to_string(migration_dir.join("002_cayley_tables.sql")).unwrap();
 
@@ -157,7 +157,7 @@ mod migration_tests {
             // Run both migrations manually
             let migration_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
             let migration1_sql =
-                std::fs::read_to_string(migration_dir.join("001_initial_schema.sql")).unwrap();
+                std::fs::read_to_string(migration_dir.join("001_initial.sql")).unwrap();
             let migration2_sql =
                 std::fs::read_to_string(migration_dir.join("002_cayley_tables.sql")).unwrap();
 
@@ -218,7 +218,7 @@ mod migration_tests {
             // Run both migrations manually
             let migration_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
             let migration1_sql =
-                std::fs::read_to_string(migration_dir.join("001_initial_schema.sql")).unwrap();
+                std::fs::read_to_string(migration_dir.join("001_initial.sql")).unwrap();
             let migration2_sql =
                 std::fs::read_to_string(migration_dir.join("002_cayley_tables.sql")).unwrap();
 
@@ -263,7 +263,7 @@ mod migration_tests {
             // Run both migrations manually
             let migration_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
             let migration1_sql =
-                std::fs::read_to_string(migration_dir.join("001_initial_schema.sql")).unwrap();
+                std::fs::read_to_string(migration_dir.join("001_initial.sql")).unwrap();
             let migration2_sql =
                 std::fs::read_to_string(migration_dir.join("002_cayley_tables.sql")).unwrap();
 
@@ -324,7 +324,7 @@ mod migration_tests {
             // Run both migrations manually
             let migration_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
             let migration1_sql =
-                std::fs::read_to_string(migration_dir.join("001_initial_schema.sql")).unwrap();
+                std::fs::read_to_string(migration_dir.join("001_initial.sql")).unwrap();
             let migration2_sql =
                 std::fs::read_to_string(migration_dir.join("002_cayley_tables.sql")).unwrap();
 

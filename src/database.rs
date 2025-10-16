@@ -4,6 +4,7 @@ use tracing::info;
 
 /// Save a computation result to the database
 /// Useful for caching expensive operations like Cayley tables
+#[allow(dead_code)]
 pub async fn save_computation(params: Value) -> Result<Value> {
     let name = params["name"]
         .as_str()
@@ -39,6 +40,7 @@ pub async fn save_computation(params: Value) -> Result<Value> {
 
 /// Load a saved computation from the database
 /// Useful for retrieving cached Cayley tables and other expensive operations
+#[allow(dead_code)]
 pub async fn load_computation(params: Value) -> Result<Value> {
     let name = params["name"]
         .as_str()

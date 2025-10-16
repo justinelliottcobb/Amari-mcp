@@ -1,7 +1,9 @@
 use anyhow::Result;
 use serde_json::{json, Value};
 use std::time::Instant;
-use tracing::{info, warn};
+use tracing::info;
+#[cfg(feature = "database")]
+use tracing::warn;
 
 #[cfg(feature = "database")]
 use sqlx::PgPool;
@@ -179,6 +181,7 @@ async fn update_usage_stats(
 }
 
 /// Decompress table data from database storage
+#[allow(dead_code)]
 fn decompress_table_data(compressed_data: &[u8]) -> Result<Vec<f64>> {
     // Convert bytes back to f64 (assuming no compression for now)
     let mut table_data = Vec::new();
@@ -196,6 +199,7 @@ fn decompress_table_data(compressed_data: &[u8]) -> Result<Vec<f64>> {
 }
 
 /// Reconstruct 3D Cayley table from flat data
+#[allow(dead_code)]
 fn reconstruct_3d_table(flat_data: &[f64], basis_count: usize) -> Vec<Vec<Vec<f64>>> {
     let mut table = vec![vec![vec![0.0; basis_count]; basis_count]; basis_count];
 
@@ -256,6 +260,7 @@ async fn compute_cayley_table_fallback(
 
 /// Store a computed Cayley table in the cache
 /// Useful for expensive fusion computations
+#[allow(dead_code)]
 pub async fn cache_cayley_table(params: Value) -> Result<Value> {
     let table_id = params["table_id"]
         .as_str()
@@ -283,6 +288,7 @@ pub async fn cache_cayley_table(params: Value) -> Result<Value> {
 
 /// List all cached Cayley tables
 /// Helpful for managing cached fusion operations
+#[allow(dead_code)]
 pub async fn list_cached_tables(_params: Value) -> Result<Value> {
     info!("Listing cached Cayley tables");
 
@@ -304,6 +310,7 @@ pub async fn list_cached_tables(_params: Value) -> Result<Value> {
 
 /// Clear cached Cayley tables
 /// Useful for testing or memory management
+#[allow(dead_code)]
 pub async fn clear_cayley_cache(params: Value) -> Result<Value> {
     let table_id = params["table_id"].as_str(); // Optional - if None, clear all
 
