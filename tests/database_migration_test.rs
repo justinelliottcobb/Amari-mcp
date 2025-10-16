@@ -38,11 +38,8 @@ mod migration_tests {
     #[serial]
     async fn test_migration_001_initial_schema() {
         if let Some(pool) = setup_test_db().await {
-            // Run the first migration manually
-            let migration_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("migrations")
-                .join("001_initial.sql");
-            let migration_sql = std::fs::read_to_string(&migration_path).unwrap();
+            // Run the first migration manually - use include_str! for CI reliability
+            let migration_sql = include_str!("../migrations/001_initial.sql");
             let result = sqlx::query(&migration_sql).execute(&pool).await;
             assert!(result.is_ok());
 
@@ -88,12 +85,9 @@ mod migration_tests {
     #[serial]
     async fn test_migration_002_cayley_tables() {
         if let Some(pool) = setup_test_db().await {
-            // Run both migrations manually
-            let migration_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
-            let migration1_sql =
-                std::fs::read_to_string(migration_dir.join("001_initial.sql")).unwrap();
-            let migration2_sql =
-                std::fs::read_to_string(migration_dir.join("002_cayley_tables.sql")).unwrap();
+            // Run both migrations manually - use include_str! for CI reliability
+            let migration1_sql = include_str!("../migrations/001_initial.sql");
+            let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
             let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
@@ -165,12 +159,9 @@ mod migration_tests {
     #[serial]
     async fn test_precomputed_signatures_seeded() {
         if let Some(pool) = setup_test_db().await {
-            // Run both migrations manually
-            let migration_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
-            let migration1_sql =
-                std::fs::read_to_string(migration_dir.join("001_initial.sql")).unwrap();
-            let migration2_sql =
-                std::fs::read_to_string(migration_dir.join("002_cayley_tables.sql")).unwrap();
+            // Run both migrations manually - use include_str! for CI reliability
+            let migration1_sql = include_str!("../migrations/001_initial.sql");
+            let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
             let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
@@ -226,12 +217,9 @@ mod migration_tests {
     #[serial]
     async fn test_database_functions() {
         if let Some(pool) = setup_test_db().await {
-            // Run both migrations manually
-            let migration_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
-            let migration1_sql =
-                std::fs::read_to_string(migration_dir.join("001_initial.sql")).unwrap();
-            let migration2_sql =
-                std::fs::read_to_string(migration_dir.join("002_cayley_tables.sql")).unwrap();
+            // Run both migrations manually - use include_str! for CI reliability
+            let migration1_sql = include_str!("../migrations/001_initial.sql");
+            let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
             let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
@@ -271,12 +259,9 @@ mod migration_tests {
     #[serial]
     async fn test_constraints_and_indexes() {
         if let Some(pool) = setup_test_db().await {
-            // Run both migrations manually
-            let migration_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
-            let migration1_sql =
-                std::fs::read_to_string(migration_dir.join("001_initial.sql")).unwrap();
-            let migration2_sql =
-                std::fs::read_to_string(migration_dir.join("002_cayley_tables.sql")).unwrap();
+            // Run both migrations manually - use include_str! for CI reliability
+            let migration1_sql = include_str!("../migrations/001_initial.sql");
+            let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
             let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
@@ -332,12 +317,9 @@ mod migration_tests {
     #[serial]
     async fn test_migration_rollback_compatibility() {
         if let Some(pool) = setup_test_db().await {
-            // Run both migrations manually
-            let migration_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
-            let migration1_sql =
-                std::fs::read_to_string(migration_dir.join("001_initial.sql")).unwrap();
-            let migration2_sql =
-                std::fs::read_to_string(migration_dir.join("002_cayley_tables.sql")).unwrap();
+            // Run both migrations manually - use include_str! for CI reliability
+            let migration1_sql = include_str!("../migrations/001_initial.sql");
+            let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
             let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
