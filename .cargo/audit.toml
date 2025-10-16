@@ -1,0 +1,12 @@
+# Security audit configuration for cargo audit
+#
+# This file ignores specific security advisories that don't affect our usage
+
+[advisories]
+# RSA timing attack vulnerability in MySQL driver
+# We only use PostgreSQL, not MySQL, so this vulnerability doesn't affect us
+# Even though cargo audit reports this, cargo tree shows no mysql dependencies
+ignore = [
+    "RUSTSEC-2023-0071",  # RSA timing attack - only affects MySQL (we use PostgreSQL only)
+    "RUSTSEC-2024-0436",  # paste crate unmaintained warning - indirect dependency from amari
+]

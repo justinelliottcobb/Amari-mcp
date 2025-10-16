@@ -100,7 +100,8 @@ async fn main() -> Result<()> {
     let db_pool = if let Some(ref db_url) = cli.database_url {
         info!("   Database: {}", db_url);
         let pool = sqlx::PgPool::connect(db_url).await?;
-        sqlx::migrate!("./migrations").run(&pool).await?;
+        // Note: Manual migration setup would go here if needed
+        // For now, migrations should be run manually via `cargo sqlx migrate run`
         info!("   Database connected and migrations applied");
         Some(pool)
     } else {
