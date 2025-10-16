@@ -5,15 +5,40 @@ mod migration_tests {
     use std::env;
 
     async fn execute_migration_sql(pool: &PgPool, migration_sql: &str) -> Result<(), sqlx::Error> {
-        // Split migration into individual statements and execute each one
-        for (i, statement) in migration_sql.split(';').enumerate() {
-            let statement = statement.trim();
-            if !statement.is_empty() && !statement.starts_with("--") {
-                eprintln!("Executing statement {}: {}", i, statement.lines().next().unwrap_or("").trim());
-                if let Err(e) = sqlx::query(statement).execute(pool).await {
-                    eprintln!("Failed statement: {}", statement);
-                    return Err(e);
+        // More robust SQL statement splitting - handle semicolons properly
+        let mut statements = Vec::new();
+        let mut current_statement = String::new();
+        let mut in_string = false;
+        for ch in migration_sql.chars() {
+            match ch {
+                '\'' => in_string = !in_string,
+                ';' if !in_string => {
+                    let stmt = current_statement.trim();
+                    if !stmt.is_empty() && !stmt.starts_with("--") {
+                        statements.push(stmt.to_string());
+                    }
+                    current_statement.clear();
                 }
+                _ => current_statement.push(ch),
+            }
+        }
+
+        // Add final statement if not empty
+        let stmt = current_statement.trim();
+        if !stmt.is_empty() && !stmt.starts_with("--") {
+            statements.push(stmt.to_string());
+        }
+
+        // Execute each statement
+        for (i, statement) in statements.iter().enumerate() {
+            eprintln!(
+                "Executing statement {}: {}",
+                i,
+                statement.lines().next().unwrap_or("").trim()
+            );
+            if let Err(e) = sqlx::query(statement).execute(pool).await {
+                eprintln!("Failed statement: {}", statement);
+                return Err(e);
             }
         }
         Ok(())
