@@ -4,6 +4,17 @@ mod migration_tests {
     use sqlx::{PgPool, Row};
     use std::env;
 
+    async fn execute_migration_sql(pool: &PgPool, migration_sql: &str) -> Result<(), sqlx::Error> {
+        // Split migration into individual statements and execute each one
+        for statement in migration_sql.split(';') {
+            let statement = statement.trim();
+            if !statement.is_empty() && !statement.starts_with("--") {
+                sqlx::query(statement).execute(pool).await?;
+            }
+        }
+        Ok(())
+    }
+
     async fn setup_test_db() -> Option<PgPool> {
         let database_url = env::var("TEST_DATABASE_URL").ok()?;
         let pool = PgPool::connect(&database_url).await.ok()?;
@@ -40,8 +51,8 @@ mod migration_tests {
         if let Some(pool) = setup_test_db().await {
             // Run the first migration manually - use include_str! for CI reliability
             let migration_sql = include_str!("../migrations/001_initial.sql");
-            let result = sqlx::query(migration_sql).execute(&pool).await;
-            assert!(result.is_ok());
+            let result = execute_migration_sql(&pool, migration_sql).await;
+            assert!(result.is_ok(), "Migration 001 failed: {:?}", result.err());
 
             // Verify the computations table was created
             let table_exists = sqlx::query(
@@ -89,10 +100,10 @@ mod migration_tests {
             let migration1_sql = include_str!("../migrations/001_initial.sql");
             let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
-            let result1 = sqlx::query(migration1_sql).execute(&pool).await;
-            assert!(result1.is_ok());
-            let result2 = sqlx::query(migration2_sql).execute(&pool).await;
-            assert!(result2.is_ok());
+            let result1 = execute_migration_sql(&pool, migration1_sql).await;
+            assert!(result1.is_ok(), "Migration 001 failed: {:?}", result1.err());
+            let result2 = execute_migration_sql(&pool, migration2_sql).await;
+            assert!(result2.is_ok(), "Migration 002 failed: {:?}", result2.err());
 
             // Verify all Cayley table related tables exist
             let tables = vec![
@@ -163,10 +174,10 @@ mod migration_tests {
             let migration1_sql = include_str!("../migrations/001_initial.sql");
             let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
-            let result1 = sqlx::query(migration1_sql).execute(&pool).await;
-            assert!(result1.is_ok());
-            let result2 = sqlx::query(migration2_sql).execute(&pool).await;
-            assert!(result2.is_ok());
+            let result1 = execute_migration_sql(&pool, migration1_sql).await;
+            assert!(result1.is_ok(), "Migration 001 failed: {:?}", result1.err());
+            let result2 = execute_migration_sql(&pool, migration2_sql).await;
+            assert!(result2.is_ok(), "Migration 002 failed: {:?}", result2.err());
 
             // Check that precomputed_signatures table has seed data
             let signature_count =
@@ -217,10 +228,10 @@ mod migration_tests {
             let migration1_sql = include_str!("../migrations/001_initial.sql");
             let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
-            let result1 = sqlx::query(migration1_sql).execute(&pool).await;
-            assert!(result1.is_ok());
-            let result2 = sqlx::query(migration2_sql).execute(&pool).await;
-            assert!(result2.is_ok());
+            let result1 = execute_migration_sql(&pool, migration1_sql).await;
+            assert!(result1.is_ok(), "Migration 001 failed: {:?}", result1.err());
+            let result2 = execute_migration_sql(&pool, migration2_sql).await;
+            assert!(result2.is_ok(), "Migration 002 failed: {:?}", result2.err());
 
             // Test calculate_table_size function
             let size_result = sqlx::query("SELECT calculate_table_size(3, 0, 0) as size")
@@ -259,10 +270,10 @@ mod migration_tests {
             let migration1_sql = include_str!("../migrations/001_initial.sql");
             let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
-            let result1 = sqlx::query(migration1_sql).execute(&pool).await;
-            assert!(result1.is_ok());
-            let result2 = sqlx::query(migration2_sql).execute(&pool).await;
-            assert!(result2.is_ok());
+            let result1 = execute_migration_sql(&pool, migration1_sql).await;
+            assert!(result1.is_ok(), "Migration 001 failed: {:?}", result1.err());
+            let result2 = execute_migration_sql(&pool, migration2_sql).await;
+            assert!(result2.is_ok(), "Migration 002 failed: {:?}", result2.err());
 
             // Test unique constraint on cayley_tables
             let insert1 = sqlx::query(
@@ -317,10 +328,10 @@ mod migration_tests {
             let migration1_sql = include_str!("../migrations/001_initial.sql");
             let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
-            let result1 = sqlx::query(migration1_sql).execute(&pool).await;
-            assert!(result1.is_ok());
-            let result2 = sqlx::query(migration2_sql).execute(&pool).await;
-            assert!(result2.is_ok());
+            let result1 = execute_migration_sql(&pool, migration1_sql).await;
+            assert!(result1.is_ok(), "Migration 001 failed: {:?}", result1.err());
+            let result2 = execute_migration_sql(&pool, migration2_sql).await;
+            assert!(result2.is_ok(), "Migration 002 failed: {:?}", result2.err());
 
             // Test basic operations work
             let insert_result = sqlx::query(
