@@ -5,34 +5,81 @@ mod migration_tests {
     use std::env;
 
     async fn execute_migration_sql(pool: &PgPool, migration_sql: &str) -> Result<(), sqlx::Error> {
-        // More robust SQL statement splitting - handle semicolons properly
+        // Debug: Check what we actually loaded
+        eprintln!("Migration SQL length: {}", migration_sql.len());
+        eprintln!(
+            "First 100 chars: {:?}",
+            &migration_sql[..migration_sql.len().min(100)]
+        );
+        eprintln!(
+            "Contains CREATE TABLE computations: {}",
+            migration_sql.contains("CREATE TABLE computations")
+        );
+        eprintln!(
+            "Contains CREATE INDEX idx_performance_timestamp: {}",
+            migration_sql.contains("CREATE INDEX idx_performance_timestamp")
+        );
+
+        // Split by lines first, then process to handle comments properly
+        let lines: Vec<&str> = migration_sql.lines().collect();
         let mut statements = Vec::new();
         let mut current_statement = String::new();
         let mut in_string = false;
-        for ch in migration_sql.chars() {
-            match ch {
-                '\'' => in_string = !in_string,
-                ';' if !in_string => {
-                    let stmt = current_statement.trim();
-                    if !stmt.is_empty() && !stmt.starts_with("--") {
-                        statements.push(stmt.to_string());
+        let mut in_function = false;
+
+        for line in lines {
+            let trimmed_line = line.trim();
+
+            // Skip empty lines and comment-only lines
+            if trimmed_line.is_empty() || trimmed_line.starts_with("--") {
+                continue;
+            }
+
+            // Track if we're inside a function definition
+            if trimmed_line.contains("$")
+                && (trimmed_line.contains("FUNCTION") || trimmed_line.contains("language"))
+            {
+                in_function = !in_function;
+            }
+
+            // Add the line to current statement
+            if !current_statement.is_empty() {
+                current_statement.push('\n');
+            }
+            current_statement.push_str(line);
+
+            // Check for statement end (semicolon not in string)
+            for ch in line.chars() {
+                match ch {
+                    '\'' if !in_function => in_string = !in_string,
+                    ';' if !in_string && !in_function => {
+                        // Statement complete
+                        let stmt = current_statement.trim();
+                        if !stmt.is_empty() {
+                            statements.push(stmt.to_string());
+                        }
+                        current_statement.clear();
+                        break;
                     }
-                    current_statement.clear();
+                    _ => {}
                 }
-                _ => current_statement.push(ch),
             }
         }
 
         // Add final statement if not empty
         let stmt = current_statement.trim();
-        if !stmt.is_empty() && !stmt.starts_with("--") {
+        if !stmt.is_empty() {
             statements.push(stmt.to_string());
         }
 
         // Debug: show all parsed statements first
         eprintln!("Total statements parsed: {}", statements.len());
         for (i, statement) in statements.iter().enumerate() {
-            eprintln!("Statement {}: {}", i, statement.lines().next().unwrap_or("").trim());
+            eprintln!(
+                "Statement {}: {}",
+                i,
+                statement.lines().next().unwrap_or("").trim()
+            );
         }
 
         // Execute each statement
