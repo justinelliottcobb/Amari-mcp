@@ -1,6 +1,6 @@
 use anyhow::Result;
 use serde_json::{Value, json};
-use tracing::{info, warn, error};
+use tracing::{info, error};
 use std::time::Instant;
 
 #[cfg(feature = "database")]

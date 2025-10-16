@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use pmcp::{Error as McpError, RequestHandlerExtra, Server, ServerCapabilities, ToolHandler};
 use serde_json::Value;
-use tracing::{info, warn};
+use tracing::info;
 
 use crate::tools::*;
 

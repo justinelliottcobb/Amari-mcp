@@ -1,5 +1,5 @@
 use anyhow::Result;
-use amari::*; // Using amari::* instead of prelude until we verify the API
+// use amari::*; // Using amari::* instead of prelude until we verify the API
 use serde_json::{Value, json};
 use tracing::info;
 

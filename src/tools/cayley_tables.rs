@@ -8,13 +8,14 @@ use sqlx::PgPool;
 
 // Global database pool for Cayley table operations
 #[cfg(feature = "database")]
-static mut DB_POOL: Option<PgPool> = None;
+use std::sync::OnceLock;
+
+#[cfg(feature = "database")]
+static DB_POOL: OnceLock<PgPool> = OnceLock::new();
 
 #[cfg(feature = "database")]
 pub fn set_database_pool(pool: PgPool) {
-    unsafe {
-        DB_POOL = Some(pool);
-    }
+    let _ = DB_POOL.set(pool);
 }
 
 /// Cache and retrieve Cayley tables for geometric algebra operations
@@ -51,7 +52,7 @@ pub async fn get_cayley_table(params: Value) -> Result<Value> {
 /// Try to retrieve precomputed Cayley table from database
 #[cfg(feature = "database")]
 async fn try_database_lookup(sig_p: i32, sig_q: i32, sig_r: i32, start_time: Instant) -> Option<Result<Value>> {
-    let pool = unsafe { DB_POOL.as_ref()? };
+    let pool = DB_POOL.get()?;
 
     match sqlx::query_as::<_, (Vec<u8>, i32, i32, Option<f32>, Option<chrono::DateTime<chrono::Utc>>, Option<String>, Option<String>, Option<String>)>(
         r#"
