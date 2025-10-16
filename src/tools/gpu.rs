@@ -1,5 +1,5 @@
 use anyhow::Result;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use tracing::info;
 
 /// Perform batch GPU computations
@@ -10,11 +10,12 @@ pub async fn batch_compute(params: Value) -> Result<Value> {
 
     let _data = &params["data"];
 
-    let batch_size = params["batch_size"]
-        .as_u64()
-        .unwrap_or(256) as usize;
+    let batch_size = params["batch_size"].as_u64().unwrap_or(256) as usize;
 
-    info!("GPU batch compute: operation='{}', batch_size={}", operation, batch_size);
+    info!(
+        "GPU batch compute: operation='{}', batch_size={}",
+        operation, batch_size
+    );
 
     // TODO: Implement GPU batch operations using amari-gpu
     let result = match operation {
@@ -26,7 +27,7 @@ pub async fn batch_compute(params: Value) -> Result<Value> {
                 "gpu_time_ms": 0.0,
                 "note": "GPU geometric product implementation pending"
             })
-        },
+        }
         "tropical_multiply" => {
             json!({
                 "operation": "tropical_multiply",
@@ -35,7 +36,7 @@ pub async fn batch_compute(params: Value) -> Result<Value> {
                 "gpu_time_ms": 0.0,
                 "note": "GPU tropical multiplication implementation pending"
             })
-        },
+        }
         "ca_evolution" => {
             json!({
                 "operation": "ca_evolution",
@@ -44,7 +45,7 @@ pub async fn batch_compute(params: Value) -> Result<Value> {
                 "gpu_time_ms": 0.0,
                 "note": "GPU CA evolution implementation pending"
             })
-        },
+        }
         _ => {
             return Err(anyhow::anyhow!("Unsupported GPU operation: {}", operation));
         }

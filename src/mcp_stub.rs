@@ -19,7 +19,11 @@ pub struct ToolDescription {
     pub parameters: Value,
 }
 
-pub type ToolHandler = Box<dyn Fn(Value) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Value>> + Send>> + Send + Sync>;
+pub type ToolHandler = Box<
+    dyn Fn(Value) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Value>> + Send>>
+        + Send
+        + Sync,
+>;
 
 // Helper to create tool handlers from async functions
 pub fn tool_handler<F, Fut>(f: F) -> ToolHandler
@@ -43,7 +47,12 @@ impl Server {
         }
     }
 
-    pub fn add_tool(&mut self, name: &str, description: ToolDescription, handler: ToolHandler) -> Result<()> {
+    pub fn add_tool(
+        &mut self,
+        name: &str,
+        description: ToolDescription,
+        handler: ToolHandler,
+    ) -> Result<()> {
         self.tools.insert(name.to_string(), (description, handler));
         Ok(())
     }

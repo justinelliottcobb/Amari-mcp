@@ -121,12 +121,19 @@ async fn main() -> Result<()> {
                 cli.gpu,
                 #[cfg(feature = "database")]
                 db_pool.is_some(),
-            ).await?;
+            )
+            .await?;
 
             info!("Starting MCP server with stdio transport");
             #[cfg(feature = "database")]
-            info!("Cayley tables will use {} lookup",
-                if db_pool.is_some() { "database" } else { "on-demand computation" });
+            info!(
+                "Cayley tables will use {} lookup",
+                if db_pool.is_some() {
+                    "database"
+                } else {
+                    "on-demand computation"
+                }
+            );
 
             #[cfg(not(feature = "database"))]
             info!("Cayley tables will use on-demand computation");
@@ -142,7 +149,9 @@ async fn main() -> Result<()> {
                 let result = tools::cayley_precompute::precompute_essential_tables(&pool).await?;
                 println!("{}", serde_json::to_string_pretty(&result)?);
             } else {
-                return Err(anyhow::anyhow!("Database URL required for precomputation. Use --database-url"));
+                return Err(anyhow::anyhow!(
+                    "Database URL required for precomputation. Use --database-url"
+                ));
             }
         }
 
@@ -153,7 +162,9 @@ async fn main() -> Result<()> {
                 let result = tools::cayley_precompute::get_precomputation_status(&pool).await?;
                 println!("{}", serde_json::to_string_pretty(&result)?);
             } else {
-                return Err(anyhow::anyhow!("Database URL required for status check. Use --database-url"));
+                return Err(anyhow::anyhow!(
+                    "Database URL required for status check. Use --database-url"
+                ));
             }
         }
 
@@ -175,7 +186,9 @@ async fn main() -> Result<()> {
                 let result = tools::cayley_precompute::clear_precomputed_tables(&pool).await?;
                 println!("{}", serde_json::to_string_pretty(&result)?);
             } else {
-                return Err(anyhow::anyhow!("Database URL required for clearing tables. Use --database-url"));
+                return Err(anyhow::anyhow!(
+                    "Database URL required for clearing tables. Use --database-url"
+                ));
             }
         }
     }

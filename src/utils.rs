@@ -4,7 +4,10 @@ use serde_json::Value;
 /// Utility functions for the Amari MCP server
 
 /// Validate multivector coefficients for given signature
-pub fn validate_multivector_coefficients(coefficients: &[f64], signature: &[usize; 3]) -> Result<()> {
+pub fn validate_multivector_coefficients(
+    coefficients: &[f64],
+    signature: &[usize; 3],
+) -> Result<()> {
     let expected_size = 1 << (signature[0] + signature[1] + signature[2]);
 
     if coefficients.len() != expected_size {
@@ -87,8 +90,14 @@ mod tests {
     #[test]
     fn test_float_to_json() {
         assert_eq!(float_to_json(1.5), Value::from(1.5));
-        assert_eq!(float_to_json(f64::INFINITY), Value::String("Infinity".to_string()));
-        assert_eq!(float_to_json(f64::NEG_INFINITY), Value::String("-Infinity".to_string()));
+        assert_eq!(
+            float_to_json(f64::INFINITY),
+            Value::String("Infinity".to_string())
+        );
+        assert_eq!(
+            float_to_json(f64::NEG_INFINITY),
+            Value::String("-Infinity".to_string())
+        );
         assert_eq!(float_to_json(f64::NAN), Value::String("NaN".to_string()));
     }
 }

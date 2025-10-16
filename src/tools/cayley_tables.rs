@@ -1,7 +1,7 @@
 use anyhow::Result;
-use serde_json::{Value, json};
-use tracing::{info, warn};
+use serde_json::{json, Value};
 use std::time::Instant;
+use tracing::{info, warn};
 
 #[cfg(feature = "database")]
 use sqlx::PgPool;
@@ -31,11 +31,13 @@ pub async fn get_cayley_table(params: Value) -> Result<Value> {
     let sig_q = signature.get(1).and_then(|v| v.as_i64()).unwrap_or(0) as i32;
     let sig_r = signature.get(2).and_then(|v| v.as_i64()).unwrap_or(0) as i32;
 
-    let table_id = format!("cayley_{}_{}_{}",  sig_p, sig_q, sig_r);
+    let table_id = format!("cayley_{}_{}_{}", sig_p, sig_q, sig_r);
     let force_recompute = params["force_recompute"].as_bool().unwrap_or(false);
 
-    info!("🔍 Requested Cayley table for signature [{}, {}, {}], force_recompute: {}",
-        sig_p, sig_q, sig_r, force_recompute);
+    info!(
+        "🔍 Requested Cayley table for signature [{}, {}, {}], force_recompute: {}",
+        sig_p, sig_q, sig_r, force_recompute
+    );
 
     // Try database lookup first (if database feature enabled)
     #[cfg(feature = "database")]
@@ -51,10 +53,27 @@ pub async fn get_cayley_table(params: Value) -> Result<Value> {
 
 /// Try to retrieve precomputed Cayley table from database
 #[cfg(feature = "database")]
-async fn try_database_lookup(sig_p: i32, sig_q: i32, sig_r: i32, start_time: Instant) -> Option<Result<Value>> {
+async fn try_database_lookup(
+    sig_p: i32,
+    sig_q: i32,
+    sig_r: i32,
+    start_time: Instant,
+) -> Option<Result<Value>> {
     let pool = DB_POOL.get()?;
 
-    match sqlx::query_as::<_, (Vec<u8>, i32, i32, Option<f32>, Option<chrono::DateTime<chrono::Utc>>, Option<String>, Option<String>, Option<String>)>(
+    match sqlx::query_as::<
+        _,
+        (
+            Vec<u8>,
+            i32,
+            i32,
+            Option<f32>,
+            Option<chrono::DateTime<chrono::Utc>>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+        ),
+    >(
         r#"
         SELECT
             ct.table_data,
@@ -68,7 +87,7 @@ async fn try_database_lookup(sig_p: i32, sig_q: i32, sig_r: i32, start_time: Ins
         FROM cayley_tables ct
         LEFT JOIN precomputed_signatures ps USING (signature_p, signature_q, signature_r)
         WHERE ct.signature_p = $1 AND ct.signature_q = $2 AND ct.signature_r = $3
-        "#
+        "#,
     )
     .bind(sig_p)
     .bind(sig_q)
@@ -79,15 +98,18 @@ async fn try_database_lookup(sig_p: i32, sig_q: i32, sig_r: i32, start_time: Ins
         Ok(Some(row)) => {
             let lookup_time = start_time.elapsed().as_millis() as f32;
 
-            info!("Database hit for [{}, {}, {}] in {}ms",
-                sig_p, sig_q, sig_r, lookup_time);
+            info!(
+                "Database hit for [{}, {}, {}] in {}ms",
+                sig_p, sig_q, sig_r, lookup_time
+            );
 
             // Decompress the table data
             match decompress_table_data(&row.0) {
                 Ok(table_data) => {
                     // Update usage statistics
                     let saved_time = row.3.unwrap_or(0.0);
-                    if let Err(e) = update_usage_stats(pool, sig_p, sig_q, sig_r, saved_time).await {
+                    if let Err(e) = update_usage_stats(pool, sig_p, sig_q, sig_r, saved_time).await
+                    {
                         warn!("Failed to update usage stats: {}", e);
                     }
 
@@ -120,12 +142,17 @@ async fn try_database_lookup(sig_p: i32, sig_q: i32, sig_r: i32, start_time: Ins
             }
         }
         Ok(None) => {
-            info!("📊 No precomputed table found for [{}, {}, {}], will compute",
-                sig_p, sig_q, sig_r);
+            info!(
+                "📊 No precomputed table found for [{}, {}, {}], will compute",
+                sig_p, sig_q, sig_r
+            );
             None // Not found in database
         }
         Err(e) => {
-            warn!("Database lookup failed for [{}, {}, {}]: {}", sig_p, sig_q, sig_r, e);
+            warn!(
+                "Database lookup failed for [{}, {}, {}]: {}",
+                sig_p, sig_q, sig_r, e
+            );
             None // Database error, fall back to computation
         }
     }
@@ -133,14 +160,20 @@ async fn try_database_lookup(sig_p: i32, sig_q: i32, sig_r: i32, start_time: Ins
 
 /// Update usage statistics for tracking
 #[cfg(feature = "database")]
-async fn update_usage_stats(pool: &PgPool, sig_p: i32, sig_q: i32, sig_r: i32, time_saved_ms: f32) -> Result<()> {
+async fn update_usage_stats(
+    pool: &PgPool,
+    sig_p: i32,
+    sig_q: i32,
+    sig_r: i32,
+    time_saved_ms: f32,
+) -> Result<()> {
     sqlx::query("SELECT update_cayley_usage($1, $2, $3, $4)")
         .bind(sig_p)
         .bind(sig_q)
         .bind(sig_r)
         .bind(time_saved_ms)
-    .execute(pool)
-    .await?;
+        .execute(pool)
+        .await?;
 
     Ok(())
 }
@@ -152,7 +185,8 @@ fn decompress_table_data(compressed_data: &[u8]) -> Result<Vec<f64>> {
 
     for chunk in compressed_data.chunks(8) {
         if chunk.len() == 8 {
-            let bytes: [u8; 8] = chunk.try_into()
+            let bytes: [u8; 8] = chunk
+                .try_into()
                 .map_err(|_| anyhow::anyhow!("Invalid chunk size"))?;
             table_data.push(f64::from_le_bytes(bytes));
         }
@@ -180,12 +214,20 @@ fn reconstruct_3d_table(flat_data: &[f64], basis_count: usize) -> Vec<Vec<Vec<f6
 }
 
 /// Fallback computation when database lookup fails or is forced
-async fn compute_cayley_table_fallback(sig_p: i32, sig_q: i32, sig_r: i32, table_id: String, start_time: Instant) -> Result<Value> {
+async fn compute_cayley_table_fallback(
+    sig_p: i32,
+    sig_q: i32,
+    sig_r: i32,
+    table_id: String,
+    start_time: Instant,
+) -> Result<Value> {
     let dimensions = (sig_p + sig_q + sig_r) as usize;
     let basis_count = 1_usize << dimensions;
 
-    info!("🧮 Computing Cayley table for [{}, {}, {}] ({}D, {} basis elements)",
-        sig_p, sig_q, sig_r, dimensions, basis_count);
+    info!(
+        "🧮 Computing Cayley table for [{}, {}, {}] ({}D, {} basis elements)",
+        sig_p, sig_q, sig_r, dimensions, basis_count
+    );
 
     // Create simplified Cayley table (TODO: integrate with amari-fusion)
     let mut cayley_table = vec![vec![vec![0.0; basis_count]; basis_count]; basis_count];
@@ -245,14 +287,12 @@ pub async fn list_cached_tables(_params: Value) -> Result<Value> {
     info!("Listing cached Cayley tables");
 
     // TODO: Query database for all cached tables
-    let cached_tables = vec![
-        json!({
-            "table_id": "cayley_3_0_0",
-            "signature": [3, 0, 0],
-            "cached_at": "2024-01-01T12:00:00Z",
-            "size_mb": 0.5
-        })
-    ];
+    let cached_tables = vec![json!({
+        "table_id": "cayley_3_0_0",
+        "signature": [3, 0, 0],
+        "cached_at": "2024-01-01T12:00:00Z",
+        "size_mb": 0.5
+    })];
 
     Ok(json!({
         "success": true,
@@ -285,8 +325,8 @@ pub async fn clear_cayley_cache(params: Value) -> Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
     use approx::assert_relative_eq;
+    use serde_json::json;
 
     #[tokio::test]
     async fn test_get_cayley_table_basic() {

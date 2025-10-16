@@ -1,5 +1,5 @@
 use anyhow::Result;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use tracing::info;
 
 /// Save a computation result to the database
@@ -16,7 +16,10 @@ pub async fn save_computation(params: Value) -> Result<Value> {
     let _result = &params["result"];
     let _metadata = params["metadata"].as_object();
 
-    info!("Saving computation '{}' of type '{}'", name, computation_type);
+    info!(
+        "Saving computation '{}' of type '{}'",
+        name, computation_type
+    );
 
     // TODO: In the real implementation:
     // 1. Validate input data

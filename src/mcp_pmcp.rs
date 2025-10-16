@@ -125,7 +125,9 @@ impl GpuBatchHandler {
 impl ToolHandler for GpuBatchHandler {
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
         if !self.gpu_enabled {
-            return Err(McpError::Internal("GPU acceleration not enabled".to_string()));
+            return Err(McpError::Internal(
+                "GPU acceleration not enabled".to_string(),
+            ));
         }
 
         info!("🔧 GPU batch computation");
@@ -292,7 +294,8 @@ pub async fn create_amari_mcp_server(
     // Add GPU tools if enabled
     if gpu_enabled {
         info!("   🚀 Adding GPU acceleration tools");
-        server_builder = server_builder.tool("gpu_batch_compute", GpuBatchHandler::new(gpu_enabled));
+        server_builder =
+            server_builder.tool("gpu_batch_compute", GpuBatchHandler::new(gpu_enabled));
     }
 
     // Add database tools if enabled
@@ -300,10 +303,22 @@ pub async fn create_amari_mcp_server(
     if db_available {
         info!("   💾 Adding database tools and Cayley table management");
         server_builder = server_builder
-            .tool("save_computation", SaveComputationHandler::new(db_available))
-            .tool("load_computation", LoadComputationHandler::new(db_available))
-            .tool("precompute_cayley_tables", PrecomputeTablesHandler::new(db_available))
-            .tool("cayley_precompute_status", PrecomputeStatusHandler::new(db_available));
+            .tool(
+                "save_computation",
+                SaveComputationHandler::new(db_available),
+            )
+            .tool(
+                "load_computation",
+                LoadComputationHandler::new(db_available),
+            )
+            .tool(
+                "precompute_cayley_tables",
+                PrecomputeTablesHandler::new(db_available),
+            )
+            .tool(
+                "cayley_precompute_status",
+                PrecomputeStatusHandler::new(db_available),
+            );
     }
 
     let server = server_builder
@@ -318,8 +333,8 @@ pub async fn create_amari_mcp_server(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
     use pmcp::RequestHandlerExtra;
+    use serde_json::json;
 
     fn mock_extra() -> RequestHandlerExtra {
         use std::collections::HashMap;
@@ -340,7 +355,8 @@ mod tests {
             false, // GPU disabled
             #[cfg(feature = "database")]
             false, // DB disabled
-        ).await;
+        )
+        .await;
 
         assert!(server_result.is_ok());
     }

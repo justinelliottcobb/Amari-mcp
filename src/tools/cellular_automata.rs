@@ -1,5 +1,5 @@
 use anyhow::Result;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use tracing::info;
 
 /// Evolve cellular automata
@@ -12,7 +12,10 @@ pub async fn evolve(params: Value) -> Result<Value> {
             cell.as_array()
                 .ok_or_else(|| anyhow::anyhow!("Each cell must be an array of coefficients"))?
                 .iter()
-                .map(|v| v.as_f64().ok_or_else(|| anyhow::anyhow!("Invalid coefficient")))
+                .map(|v| {
+                    v.as_f64()
+                        .ok_or_else(|| anyhow::anyhow!("Invalid coefficient"))
+                })
                 .collect::<Result<Vec<_>>>()
         })
         .collect::<Result<Vec<_>>>()?;
@@ -27,17 +30,24 @@ pub async fn evolve(params: Value) -> Result<Value> {
 
     let grid_width = params["grid_width"]
         .as_u64()
-        .ok_or_else(|| anyhow::anyhow!("grid_width must be an integer"))? as usize;
+        .ok_or_else(|| anyhow::anyhow!("grid_width must be an integer"))?
+        as usize;
 
     let grid_height = params["grid_height"]
         .as_u64()
-        .ok_or_else(|| anyhow::anyhow!("grid_height must be an integer"))? as usize;
+        .ok_or_else(|| anyhow::anyhow!("grid_height must be an integer"))?
+        as usize;
 
     if initial_state.len() != grid_width * grid_height {
-        return Err(anyhow::anyhow!("Initial state size doesn't match grid dimensions"));
+        return Err(anyhow::anyhow!(
+            "Initial state size doesn't match grid dimensions"
+        ));
     }
 
-    info!("Evolving {}x{} CA with '{}' rule for {} steps", grid_width, grid_height, rule, steps);
+    info!(
+        "Evolving {}x{} CA with '{}' rule for {} steps",
+        grid_width, grid_height, rule, steps
+    );
 
     // TODO: Implement CA evolution using amari-automata
     // For now, return the initial state as placeholder

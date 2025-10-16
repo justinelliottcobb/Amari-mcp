@@ -37,8 +37,8 @@ async fn main() -> anyhow::Result<()> {
 ```
 */
 
-pub mod mcp_stub;
 pub mod mcp_pmcp;
+pub mod mcp_stub;
 pub mod server;
 pub mod tools;
 pub mod utils;

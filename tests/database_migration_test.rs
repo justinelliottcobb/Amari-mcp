@@ -9,10 +9,18 @@ mod migration_tests {
         let pool = PgPool::connect(&database_url).await.ok()?;
 
         // Drop all tables to start fresh
-        let _ = sqlx::query("DROP TABLE IF EXISTS cayley_usage_stats CASCADE").execute(&pool).await;
-        let _ = sqlx::query("DROP TABLE IF EXISTS cayley_tables CASCADE").execute(&pool).await;
-        let _ = sqlx::query("DROP TABLE IF EXISTS precomputed_signatures CASCADE").execute(&pool).await;
-        let _ = sqlx::query("DROP TABLE IF EXISTS computational_results CASCADE").execute(&pool).await;
+        let _ = sqlx::query("DROP TABLE IF EXISTS cayley_usage_stats CASCADE")
+            .execute(&pool)
+            .await;
+        let _ = sqlx::query("DROP TABLE IF EXISTS cayley_tables CASCADE")
+            .execute(&pool)
+            .await;
+        let _ = sqlx::query("DROP TABLE IF EXISTS precomputed_signatures CASCADE")
+            .execute(&pool)
+            .await;
+        let _ = sqlx::query("DROP TABLE IF EXISTS computational_results CASCADE")
+            .execute(&pool)
+            .await;
 
         Some(pool)
     }
@@ -22,7 +30,8 @@ mod migration_tests {
     async fn test_migration_001_initial_schema() {
         if let Some(pool) = setup_test_db().await {
             // Run the first migration manually
-            let migration_sql = std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
+            let migration_sql =
+                std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
             let result = sqlx::query(&migration_sql).execute(&pool).await;
             assert!(result.is_ok());
 
@@ -44,13 +53,16 @@ mod migration_tests {
                 FROM information_schema.columns
                 WHERE table_name = 'computational_results'
                 ORDER BY ordinal_position
-                "#
+                "#,
             )
             .fetch_all(&pool)
             .await
             .unwrap();
 
-            let column_names: Vec<String> = columns.iter().map(|row| row.get::<String, _>("column_name")).collect();
+            let column_names: Vec<String> = columns
+                .iter()
+                .map(|row| row.get::<String, _>("column_name"))
+                .collect();
             assert!(column_names.contains(&"id".to_string()));
             assert!(column_names.contains(&"computation_id".to_string()));
             assert!(column_names.contains(&"result_data".to_string()));
@@ -64,8 +76,10 @@ mod migration_tests {
     async fn test_migration_002_cayley_tables() {
         if let Some(pool) = setup_test_db().await {
             // Run both migrations manually
-            let migration1_sql = std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
-            let migration2_sql = std::fs::read_to_string("./migrations/002_cayley_tables.sql").unwrap();
+            let migration1_sql =
+                std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
+            let migration2_sql =
+                std::fs::read_to_string("./migrations/002_cayley_tables.sql").unwrap();
 
             let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
@@ -73,7 +87,11 @@ mod migration_tests {
             assert!(result2.is_ok());
 
             // Verify all Cayley table related tables exist
-            let tables = vec!["cayley_tables", "precomputed_signatures", "cayley_usage_stats"];
+            let tables = vec![
+                "cayley_tables",
+                "precomputed_signatures",
+                "cayley_usage_stats",
+            ];
 
             for table_name in tables {
                 let table_exists = sqlx::query(&format!(
@@ -95,22 +113,36 @@ mod migration_tests {
                 FROM information_schema.columns
                 WHERE table_name = 'cayley_tables'
                 ORDER BY ordinal_position
-                "#
+                "#,
             )
             .fetch_all(&pool)
             .await
             .unwrap();
 
-            let column_names: Vec<String> = cayley_columns.iter().map(|row| row.get::<String, _>("column_name")).collect();
+            let column_names: Vec<String> = cayley_columns
+                .iter()
+                .map(|row| row.get::<String, _>("column_name"))
+                .collect();
             let expected_columns = vec![
-                "id", "signature_p", "signature_q", "signature_r",
-                "dimensions", "basis_count", "table_data", "metadata",
-                "computed_at", "computation_time_ms", "checksum"
+                "id",
+                "signature_p",
+                "signature_q",
+                "signature_r",
+                "dimensions",
+                "basis_count",
+                "table_data",
+                "metadata",
+                "computed_at",
+                "computation_time_ms",
+                "checksum",
             ];
 
             for expected_col in expected_columns {
-                assert!(column_names.contains(&expected_col.to_string()),
-                    "Column {} should exist in cayley_tables", expected_col);
+                assert!(
+                    column_names.contains(&expected_col.to_string()),
+                    "Column {} should exist in cayley_tables",
+                    expected_col
+                );
             }
         }
     }
@@ -120,8 +152,10 @@ mod migration_tests {
     async fn test_precomputed_signatures_seeded() {
         if let Some(pool) = setup_test_db().await {
             // Run both migrations manually
-            let migration1_sql = std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
-            let migration2_sql = std::fs::read_to_string("./migrations/002_cayley_tables.sql").unwrap();
+            let migration1_sql =
+                std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
+            let migration2_sql =
+                std::fs::read_to_string("./migrations/002_cayley_tables.sql").unwrap();
 
             let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
@@ -129,19 +163,18 @@ mod migration_tests {
             assert!(result2.is_ok());
 
             // Check that precomputed_signatures table has seed data
-            let signature_count = sqlx::query(
-                "SELECT COUNT(*) as count FROM precomputed_signatures"
-            )
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+            let signature_count =
+                sqlx::query("SELECT COUNT(*) as count FROM precomputed_signatures")
+                    .fetch_one(&pool)
+                    .await
+                    .unwrap();
 
             let count: i64 = signature_count.get("count");
             assert!(count > 0, "Should have seeded signatures");
 
             // Check for essential signatures
             let essential_count = sqlx::query(
-                "SELECT COUNT(*) as count FROM precomputed_signatures WHERE is_essential = true"
+                "SELECT COUNT(*) as count FROM precomputed_signatures WHERE is_essential = true",
             )
             .fetch_one(&pool)
             .await
@@ -165,7 +198,11 @@ mod migration_tests {
                 .unwrap();
 
                 let sig_exists: bool = exists.get("exists");
-                assert_eq!(sig_exists, true, "Signature [{}, {}, {}] should exist", p, q, r);
+                assert_eq!(
+                    sig_exists, true,
+                    "Signature [{}, {}, {}] should exist",
+                    p, q, r
+                );
             }
         }
     }
@@ -175,8 +212,10 @@ mod migration_tests {
     async fn test_database_functions() {
         if let Some(pool) = setup_test_db().await {
             // Run both migrations manually
-            let migration1_sql = std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
-            let migration2_sql = std::fs::read_to_string("./migrations/002_cayley_tables.sql").unwrap();
+            let migration1_sql =
+                std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
+            let migration2_sql =
+                std::fs::read_to_string("./migrations/002_cayley_tables.sql").unwrap();
 
             let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
@@ -184,22 +223,18 @@ mod migration_tests {
             assert!(result2.is_ok());
 
             // Test calculate_table_size function
-            let size_result = sqlx::query(
-                "SELECT calculate_table_size(3, 0, 0) as size"
-            )
-            .fetch_one(&pool)
-            .await;
+            let size_result = sqlx::query("SELECT calculate_table_size(3, 0, 0) as size")
+                .fetch_one(&pool)
+                .await;
 
             assert!(size_result.is_ok());
             let size: i32 = size_result.unwrap().get("size");
             assert_eq!(size, 512); // 8^3 * 8 bytes = 512 bytes for 3D
 
             // Test update_cayley_usage function
-            let usage_result = sqlx::query(
-                "SELECT update_cayley_usage(3, 0, 0, 100.0) as updated"
-            )
-            .fetch_one(&pool)
-            .await;
+            let usage_result = sqlx::query("SELECT update_cayley_usage(3, 0, 0, 100.0) as updated")
+                .fetch_one(&pool)
+                .await;
 
             assert!(usage_result.is_ok());
 
@@ -221,8 +256,10 @@ mod migration_tests {
     async fn test_constraints_and_indexes() {
         if let Some(pool) = setup_test_db().await {
             // Run both migrations manually
-            let migration1_sql = std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
-            let migration2_sql = std::fs::read_to_string("./migrations/002_cayley_tables.sql").unwrap();
+            let migration1_sql =
+                std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
+            let migration2_sql =
+                std::fs::read_to_string("./migrations/002_cayley_tables.sql").unwrap();
 
             let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
@@ -263,7 +300,7 @@ mod migration_tests {
                     WHERE tablename = 'cayley_tables'
                     AND indexname = 'idx_cayley_signature'
                 ) as exists
-                "#
+                "#,
             )
             .fetch_one(&pool)
             .await
@@ -279,8 +316,10 @@ mod migration_tests {
     async fn test_migration_rollback_compatibility() {
         if let Some(pool) = setup_test_db().await {
             // Run both migrations manually
-            let migration1_sql = std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
-            let migration2_sql = std::fs::read_to_string("./migrations/002_cayley_tables.sql").unwrap();
+            let migration1_sql =
+                std::fs::read_to_string("./migrations/001_initial_schema.sql").unwrap();
+            let migration2_sql =
+                std::fs::read_to_string("./migrations/002_cayley_tables.sql").unwrap();
 
             let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
@@ -314,11 +353,9 @@ mod migration_tests {
             assert!(cayley_insert.is_ok());
 
             // Test usage stats work
-            let usage_result = sqlx::query(
-                "SELECT update_cayley_usage(5, 0, 0, 50.0)"
-            )
-            .execute(&pool)
-            .await;
+            let usage_result = sqlx::query("SELECT update_cayley_usage(5, 0, 0, 50.0)")
+                .execute(&pool)
+                .await;
             assert!(usage_result.is_ok());
         }
     }

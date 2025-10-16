@@ -1,7 +1,7 @@
 use anyhow::Result;
-use serde_json::{Value, json};
-use tracing::{info, error};
+use serde_json::{json, Value};
 use std::time::Instant;
+use tracing::{error, info};
 
 #[cfg(feature = "database")]
 use sqlx::PgPool;
@@ -19,25 +19,26 @@ pub async fn precompute_essential_tables(pool: &PgPool) -> Result<Value> {
     let mut total_size_bytes = 0u64;
 
     // Get list of signatures to precompute, ordered by priority
-    let signatures = sqlx::query_as::<_, (i32, i32, i32, Option<String>, Option<i32>, Option<bool>)>(
-        r#"
+    let signatures =
+        sqlx::query_as::<_, (i32, i32, i32, Option<String>, Option<i32>, Option<bool>)>(
+            r#"
         SELECT signature_p, signature_q, signature_r, name, priority, is_essential
         FROM precomputed_signatures
         ORDER BY priority DESC, is_essential DESC
-        "#
-    )
-    .fetch_all(pool)
-    .await?;
+        "#,
+        )
+        .fetch_all(pool)
+        .await?;
 
     let total_signatures = signatures.len();
     info!("📋 Found {} signatures to precompute", total_signatures);
 
     for sig in signatures {
         let signature = [sig.0 as usize, sig.1 as usize, sig.2 as usize];
-        let table_id = format!("cayley_{}_{}_{}",
-            sig.0, sig.1, sig.2);
+        let table_id = format!("cayley_{}_{}_{}", sig.0, sig.1, sig.2);
 
-        info!("🔧 Processing {}: {} (priority: {})",
+        info!(
+            "🔧 Processing {}: {} (priority: {})",
             table_id,
             sig.3.as_deref().unwrap_or("Unknown"),
             sig.4.unwrap_or(0)
@@ -78,7 +79,7 @@ pub async fn precompute_essential_tables(pool: &PgPool) -> Result<Value> {
                     (signature_p, signature_q, signature_r, dimensions, basis_count,
                      table_data, computation_time_ms, checksum, metadata)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                    "#
+                    "#,
                 )
                 .bind(sig.0)
                 .bind(sig.1)
@@ -95,10 +96,15 @@ pub async fn precompute_essential_tables(pool: &PgPool) -> Result<Value> {
                     "compressed_size_bytes": size_bytes
                 }))
                 .execute(pool)
-                .await {
+                .await
+                {
                     Ok(_) => {
-                        info!("   ✅ Stored {} ({}ms, {} KB compressed)",
-                            table_id, computation_time_ms, size_bytes / 1024);
+                        info!(
+                            "   ✅ Stored {} ({}ms, {} KB compressed)",
+                            table_id,
+                            computation_time_ms,
+                            size_bytes / 1024
+                        );
                         computed_count += 1;
                     }
                     Err(e) => {
@@ -116,7 +122,10 @@ pub async fn precompute_essential_tables(pool: &PgPool) -> Result<Value> {
 
     let total_time = start_time.elapsed();
 
-    info!("🎉 Precomputation completed in {:.2}s", total_time.as_secs_f64());
+    info!(
+        "🎉 Precomputation completed in {:.2}s",
+        total_time.as_secs_f64()
+    );
     info!("   ✅ Computed: {}", computed_count);
     info!("   ⏭️  Skipped: {}", skipped_count);
     info!("   ❌ Failed: {}", failed_count);
@@ -144,8 +153,10 @@ async fn compute_cayley_table_for_signature(signature: &[usize; 3]) -> Result<(V
     let dimensions = signature.iter().sum::<usize>();
     let basis_count = 1_usize << dimensions;
 
-    info!("   🔢 Computing Cayley table for signature {:?} ({}D, {} basis elements)",
-        signature, dimensions, basis_count);
+    info!(
+        "   🔢 Computing Cayley table for signature {:?} ({}D, {} basis elements)",
+        signature, dimensions, basis_count
+    );
 
     // For now, create a simplified Cayley table
     // TODO: Integrate with actual amari-fusion Cayley table computation
@@ -158,7 +169,8 @@ async fn compute_cayley_table_for_signature(signature: &[usize; 3]) -> Result<(V
 
     // Add some basic geometric algebra structure
     // This is a simplified implementation - the real version would use amari-fusion
-    for i in 0..basis_count.min(8) { // Limit for safety in stub
+    for i in 0..basis_count.min(8) {
+        // Limit for safety in stub
         for j in 0..basis_count.min(8) {
             let idx = i * basis_count * basis_count + j * basis_count;
 
@@ -172,9 +184,9 @@ async fn compute_cayley_table_for_signature(signature: &[usize; 3]) -> Result<(V
             } else if i == j && i > 0 {
                 // Squares of basis vectors depend on signature
                 let sign = match i.trailing_zeros() as usize {
-                    dim if dim < signature[0] => 1.0,  // Positive signature
+                    dim if dim < signature[0] => 1.0, // Positive signature
                     dim if dim < signature[0] + signature[1] => -1.0, // Negative signature
-                    _ => 0.0, // Null signature
+                    _ => 0.0,                         // Null signature
                 };
                 if idx < cayley_table.len() {
                     cayley_table[idx] = sign; // e_i * e_i = ±1 or 0
@@ -205,11 +217,9 @@ fn compute_simple_product_index(i: usize, j: usize, _signature: &[usize; 3]) -> 
 
 /// Compute SHA256 checksum of table data for integrity verification
 fn compute_table_checksum(table_data: &[f64]) -> String {
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
 
-    let bytes: Vec<u8> = table_data.iter()
-        .flat_map(|&f| f.to_le_bytes())
-        .collect();
+    let bytes: Vec<u8> = table_data.iter().flat_map(|&f| f.to_le_bytes()).collect();
 
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
@@ -219,9 +229,7 @@ fn compute_table_checksum(table_data: &[f64]) -> String {
 /// Compress table data for efficient storage
 fn compress_table_data(table_data: &[f64]) -> Result<Vec<u8>> {
     // Convert f64 to bytes
-    let bytes: Vec<u8> = table_data.iter()
-        .flat_map(|&f| f.to_le_bytes())
-        .collect();
+    let bytes: Vec<u8> = table_data.iter().flat_map(|&f| f.to_le_bytes()).collect();
 
     // For now, just return the raw bytes
     // TODO: Implement LZ4 or similar compression
@@ -247,7 +255,17 @@ fn decompress_table_data(compressed_data: &[u8]) -> Result<Vec<f64>> {
 /// Get precomputation status and statistics
 #[cfg(feature = "database")]
 pub async fn get_precomputation_status(pool: &PgPool) -> Result<Value> {
-    let stats = sqlx::query_as::<_, (i64, i64, Option<i64>, Option<f32>, Option<chrono::DateTime<chrono::Utc>>, Option<chrono::DateTime<chrono::Utc>>)>(
+    let stats = sqlx::query_as::<
+        _,
+        (
+            i64,
+            i64,
+            Option<i64>,
+            Option<f32>,
+            Option<chrono::DateTime<chrono::Utc>>,
+            Option<chrono::DateTime<chrono::Utc>>,
+        ),
+    >(
         r#"
         SELECT
             COUNT(*) as total_precomputed,
@@ -258,7 +276,7 @@ pub async fn get_precomputation_status(pool: &PgPool) -> Result<Value> {
             MAX(ct.computed_at) as last_computed
         FROM cayley_tables ct
         LEFT JOIN precomputed_signatures ps USING (signature_p, signature_q, signature_r)
-        "#
+        "#,
     )
     .fetch_one(pool)
     .await?;
@@ -275,7 +293,7 @@ pub async fn get_precomputation_status(pool: &PgPool) -> Result<Value> {
         )
         ORDER BY priority DESC
         LIMIT 10
-        "#
+        "#,
     )
     .fetch_all(pool)
     .await?;

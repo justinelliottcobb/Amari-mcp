@@ -1,5 +1,5 @@
 use anyhow::Result;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use tracing::info;
 
 /// Create a multivector from coefficients (stub implementation)
@@ -8,10 +8,16 @@ pub async fn create_multivector(params: Value) -> Result<Value> {
         .as_array()
         .ok_or_else(|| anyhow::anyhow!("coefficients must be an array"))?
         .iter()
-        .map(|v| v.as_f64().ok_or_else(|| anyhow::anyhow!("Invalid coefficient")))
+        .map(|v| {
+            v.as_f64()
+                .ok_or_else(|| anyhow::anyhow!("Invalid coefficient"))
+        })
         .collect::<Result<Vec<_>>>()?;
 
-    info!("Creating multivector with {} coefficients", coefficients.len());
+    info!(
+        "Creating multivector with {} coefficients",
+        coefficients.len()
+    );
 
     Ok(json!({
         "success": true,
@@ -29,14 +35,20 @@ pub async fn geometric_product(params: Value) -> Result<Value> {
         .as_array()
         .ok_or_else(|| anyhow::anyhow!("Parameter 'a' must be an array"))?
         .iter()
-        .map(|v| v.as_f64().ok_or_else(|| anyhow::anyhow!("Invalid coefficient in 'a'")))
+        .map(|v| {
+            v.as_f64()
+                .ok_or_else(|| anyhow::anyhow!("Invalid coefficient in 'a'"))
+        })
         .collect::<Result<Vec<_>>>()?;
 
     let b_coeffs: Vec<f64> = params["b"]
         .as_array()
         .ok_or_else(|| anyhow::anyhow!("Parameter 'b' must be an array"))?
         .iter()
-        .map(|v| v.as_f64().ok_or_else(|| anyhow::anyhow!("Invalid coefficient in 'b'")))
+        .map(|v| {
+            v.as_f64()
+                .ok_or_else(|| anyhow::anyhow!("Invalid coefficient in 'b'"))
+        })
         .collect::<Result<Vec<_>>>()?;
 
     info!("Computing geometric product of multivectors");
@@ -64,14 +76,20 @@ pub async fn rotor_rotation(params: Value) -> Result<Value> {
         .as_array()
         .ok_or_else(|| anyhow::anyhow!("vector must be an array"))?
         .iter()
-        .map(|v| v.as_f64().ok_or_else(|| anyhow::anyhow!("Invalid vector component")))
+        .map(|v| {
+            v.as_f64()
+                .ok_or_else(|| anyhow::anyhow!("Invalid vector component"))
+        })
         .collect::<Result<Vec<_>>>()?;
 
     let axis: Vec<f64> = params["axis"]
         .as_array()
         .ok_or_else(|| anyhow::anyhow!("axis must be an array"))?
         .iter()
-        .map(|v| v.as_f64().ok_or_else(|| anyhow::anyhow!("Invalid axis component")))
+        .map(|v| {
+            v.as_f64()
+                .ok_or_else(|| anyhow::anyhow!("Invalid axis component"))
+        })
         .collect::<Result<Vec<_>>>()?;
 
     let angle = params["angle"]

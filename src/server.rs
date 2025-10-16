@@ -2,7 +2,7 @@ use anyhow::Result;
 // use serde_json::Value;
 use tracing::info;
 
-use crate::mcp_stub::{Server, ServerInfo, ToolDescription, tool_handler};
+use crate::mcp_stub::{tool_handler, Server, ServerInfo, ToolDescription};
 
 #[cfg(feature = "database")]
 use sqlx::PgPool;
@@ -80,7 +80,8 @@ impl AmariMcpServer {
             "create_multivector",
             ToolDescription {
                 name: "create_multivector".to_string(),
-                description: "Create a multivector from coefficients in geometric algebra".to_string(),
+                description: "Create a multivector from coefficients in geometric algebra"
+                    .to_string(),
                 parameters: serde_json::json!({
                     "type": "object",
                     "properties": {
@@ -139,7 +140,8 @@ impl AmariMcpServer {
             "rotor_rotation",
             ToolDescription {
                 name: "rotor_rotation".to_string(),
-                description: "Apply rotation to vector using rotor in geometric algebra".to_string(),
+                description: "Apply rotation to vector using rotor in geometric algebra"
+                    .to_string(),
                 parameters: serde_json::json!({
                     "type": "object",
                     "properties": {
@@ -242,7 +244,8 @@ impl AmariMcpServer {
             "compute_gradient",
             ToolDescription {
                 name: "compute_gradient".to_string(),
-                description: "Compute gradient using forward-mode automatic differentiation".to_string(),
+                description: "Compute gradient using forward-mode automatic differentiation"
+                    .to_string(),
                 parameters: serde_json::json!({
                     "type": "object",
                     "properties": {
