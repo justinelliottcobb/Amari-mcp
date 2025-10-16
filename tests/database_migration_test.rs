@@ -18,7 +18,16 @@ mod migration_tests {
         let _ = sqlx::query("DROP TABLE IF EXISTS precomputed_signatures CASCADE")
             .execute(&pool)
             .await;
-        let _ = sqlx::query("DROP TABLE IF EXISTS computational_results CASCADE")
+        let _ = sqlx::query("DROP TABLE IF EXISTS computations CASCADE")
+            .execute(&pool)
+            .await;
+        let _ = sqlx::query("DROP TABLE IF EXISTS computation_sessions CASCADE")
+            .execute(&pool)
+            .await;
+        let _ = sqlx::query("DROP TABLE IF EXISTS session_computations CASCADE")
+            .execute(&pool)
+            .await;
+        let _ = sqlx::query("DROP TABLE IF EXISTS performance_metrics CASCADE")
             .execute(&pool)
             .await;
 
@@ -37,9 +46,9 @@ mod migration_tests {
             let result = sqlx::query(&migration_sql).execute(&pool).await;
             assert!(result.is_ok());
 
-            // Verify the computational_results table was created
+            // Verify the computations table was created
             let table_exists = sqlx::query(
-                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'computational_results')"
+                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'computations')"
             )
             .fetch_one(&pool)
             .await;
@@ -53,7 +62,7 @@ mod migration_tests {
                 r#"
                 SELECT column_name, data_type, is_nullable
                 FROM information_schema.columns
-                WHERE table_name = 'computational_results'
+                WHERE table_name = 'computations'
                 ORDER BY ordinal_position
                 "#,
             )
@@ -66,10 +75,12 @@ mod migration_tests {
                 .map(|row| row.get::<String, _>("column_name"))
                 .collect();
             assert!(column_names.contains(&"id".to_string()));
-            assert!(column_names.contains(&"computation_id".to_string()));
-            assert!(column_names.contains(&"result_data".to_string()));
+            assert!(column_names.contains(&"name".to_string()));
+            assert!(column_names.contains(&"computation_type".to_string()));
+            assert!(column_names.contains(&"result".to_string()));
             assert!(column_names.contains(&"metadata".to_string()));
             assert!(column_names.contains(&"created_at".to_string()));
+            assert!(column_names.contains(&"updated_at".to_string()));
         }
     }
 
