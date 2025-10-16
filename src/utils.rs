@@ -2,7 +2,6 @@ use anyhow::Result;
 use serde_json::Value;
 
 /// Utility functions for the Amari MCP server
-
 /// Validate multivector coefficients for given signature
 #[allow(dead_code)]
 pub fn validate_multivector_coefficients(
@@ -28,7 +27,7 @@ pub fn validate_multivector_coefficients(
 pub fn parse_signature(value: Option<&Value>) -> [usize; 3] {
     if let Some(sig_array) = value.and_then(|v| v.as_array()) {
         [
-            sig_array.get(0).and_then(|v| v.as_u64()).unwrap_or(3) as usize,
+            sig_array.first().and_then(|v| v.as_u64()).unwrap_or(3) as usize,
             sig_array.get(1).and_then(|v| v.as_u64()).unwrap_or(0) as usize,
             sig_array.get(2).and_then(|v| v.as_u64()).unwrap_or(0) as usize,
         ]

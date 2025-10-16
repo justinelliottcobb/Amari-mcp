@@ -29,7 +29,7 @@ pub async fn get_cayley_table(params: Value) -> Result<Value> {
         .as_array()
         .ok_or_else(|| anyhow::anyhow!("signature must be an array [p, q, r]"))?;
 
-    let sig_p = signature.get(0).and_then(|v| v.as_i64()).unwrap_or(3) as i32;
+    let sig_p = signature.first().and_then(|v| v.as_i64()).unwrap_or(3) as i32;
     let sig_q = signature.get(1).and_then(|v| v.as_i64()).unwrap_or(0) as i32;
     let sig_r = signature.get(2).and_then(|v| v.as_i64()).unwrap_or(0) as i32;
 
@@ -200,6 +200,7 @@ fn decompress_table_data(compressed_data: &[u8]) -> Result<Vec<f64>> {
 
 /// Reconstruct 3D Cayley table from flat data
 #[allow(dead_code)]
+#[allow(clippy::needless_range_loop)]
 fn reconstruct_3d_table(flat_data: &[f64], basis_count: usize) -> Vec<Vec<Vec<f64>>> {
     let mut table = vec![vec![vec![0.0; basis_count]; basis_count]; basis_count];
 
@@ -410,6 +411,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[allow(clippy::needless_range_loop)]
     async fn test_cayley_table_structure() {
         let params = json!({
             "signature": [2, 0, 0]

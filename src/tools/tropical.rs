@@ -4,6 +4,7 @@ use serde_json::{json, Value};
 use tracing::info;
 
 /// Tropical matrix multiplication (min-plus algebra)
+#[allow(clippy::needless_range_loop)]
 pub async fn matrix_multiply(params: Value) -> Result<Value> {
     let matrix_a: Vec<Vec<f64>> = params["matrix_a"]
         .as_array()
@@ -38,9 +39,9 @@ pub async fn matrix_multiply(params: Value) -> Result<Value> {
         .collect::<Result<Vec<_>>>()?;
 
     let rows_a = matrix_a.len();
-    let cols_a = matrix_a.get(0).map(|r| r.len()).unwrap_or(0);
+    let cols_a = matrix_a.first().map(|r| r.len()).unwrap_or(0);
     let rows_b = matrix_b.len();
-    let cols_b = matrix_b.get(0).map(|r| r.len()).unwrap_or(0);
+    let cols_b = matrix_b.first().map(|r| r.len()).unwrap_or(0);
 
     if cols_a != rows_b {
         return Err(anyhow::anyhow!(
@@ -144,8 +145,8 @@ pub async fn shortest_path(params: Value) -> Result<Value> {
     let mut dist = adjacency_matrix.clone();
 
     // Initialize diagonal to 0 (identity in tropical algebra)
-    for i in 0..n {
-        dist[i][i] = 0.0;
+    for (i, row) in dist.iter_mut().enumerate().take(n) {
+        row[i] = 0.0;
     }
 
     // Floyd-Warshall iterations

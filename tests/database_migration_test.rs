@@ -40,7 +40,7 @@ mod migration_tests {
         if let Some(pool) = setup_test_db().await {
             // Run the first migration manually - use include_str! for CI reliability
             let migration_sql = include_str!("../migrations/001_initial.sql");
-            let result = sqlx::query(&migration_sql).execute(&pool).await;
+            let result = sqlx::query(migration_sql).execute(&pool).await;
             assert!(result.is_ok());
 
             // Verify the computations table was created
@@ -52,7 +52,7 @@ mod migration_tests {
 
             assert!(table_exists.is_ok());
             let exists: bool = table_exists.unwrap().get(0);
-            assert_eq!(exists, true);
+            assert!(exists);
 
             // Verify table structure
             let columns = sqlx::query(
@@ -89,9 +89,9 @@ mod migration_tests {
             let migration1_sql = include_str!("../migrations/001_initial.sql");
             let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
-            let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
+            let result1 = sqlx::query(migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
-            let result2 = sqlx::query(&migration2_sql).execute(&pool).await;
+            let result2 = sqlx::query(migration2_sql).execute(&pool).await;
             assert!(result2.is_ok());
 
             // Verify all Cayley table related tables exist
@@ -163,9 +163,9 @@ mod migration_tests {
             let migration1_sql = include_str!("../migrations/001_initial.sql");
             let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
-            let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
+            let result1 = sqlx::query(migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
-            let result2 = sqlx::query(&migration2_sql).execute(&pool).await;
+            let result2 = sqlx::query(migration2_sql).execute(&pool).await;
             assert!(result2.is_ok());
 
             // Check that precomputed_signatures table has seed data
@@ -204,11 +204,7 @@ mod migration_tests {
                 .unwrap();
 
                 let sig_exists: bool = exists.get("exists");
-                assert_eq!(
-                    sig_exists, true,
-                    "Signature [{}, {}, {}] should exist",
-                    p, q, r
-                );
+                assert!(sig_exists, "Signature [{}, {}, {}] should exist", p, q, r);
             }
         }
     }
@@ -221,9 +217,9 @@ mod migration_tests {
             let migration1_sql = include_str!("../migrations/001_initial.sql");
             let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
-            let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
+            let result1 = sqlx::query(migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
-            let result2 = sqlx::query(&migration2_sql).execute(&pool).await;
+            let result2 = sqlx::query(migration2_sql).execute(&pool).await;
             assert!(result2.is_ok());
 
             // Test calculate_table_size function
@@ -263,9 +259,9 @@ mod migration_tests {
             let migration1_sql = include_str!("../migrations/001_initial.sql");
             let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
-            let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
+            let result1 = sqlx::query(migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
-            let result2 = sqlx::query(&migration2_sql).execute(&pool).await;
+            let result2 = sqlx::query(migration2_sql).execute(&pool).await;
             assert!(result2.is_ok());
 
             // Test unique constraint on cayley_tables
@@ -277,7 +273,7 @@ mod migration_tests {
             .bind(0)
             .bind(3)
             .bind(8)
-            .bind(&vec![0u8; 64])
+            .bind(vec![0u8; 64])
             .execute(&pool).await;
             assert!(insert1.is_ok());
 
@@ -290,7 +286,7 @@ mod migration_tests {
             .bind(0)
             .bind(3)
             .bind(8)
-            .bind(&vec![0u8; 64])
+            .bind(vec![0u8; 64])
             .execute(&pool).await;
             assert!(insert2.is_err()); // Should fail due to unique constraint
 
@@ -309,7 +305,7 @@ mod migration_tests {
             .unwrap();
 
             let exists: bool = index_exists.get("exists");
-            assert_eq!(exists, true, "Signature index should exist");
+            assert!(exists, "Signature index should exist");
         }
     }
 
@@ -321,9 +317,9 @@ mod migration_tests {
             let migration1_sql = include_str!("../migrations/001_initial.sql");
             let migration2_sql = include_str!("../migrations/002_cayley_tables.sql");
 
-            let result1 = sqlx::query(&migration1_sql).execute(&pool).await;
+            let result1 = sqlx::query(migration1_sql).execute(&pool).await;
             assert!(result1.is_ok());
-            let result2 = sqlx::query(&migration2_sql).execute(&pool).await;
+            let result2 = sqlx::query(migration2_sql).execute(&pool).await;
             assert!(result2.is_ok());
 
             // Test basic operations work
@@ -348,7 +344,7 @@ mod migration_tests {
             .bind(0)
             .bind(5)
             .bind(32)
-            .bind(&vec![0u8; 256])
+            .bind(vec![0u8; 256])
             .execute(&pool).await;
             assert!(cayley_insert.is_ok());
 
