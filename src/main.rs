@@ -4,19 +4,21 @@ use std::path::PathBuf;
 use tracing::{info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-mod mcp_stub;
+// mod mcp_stub;  // Legacy stub implementation, replaced by pmcp
 // mod mcp_real;  // Disabled while implementing pmcp
 mod mcp_pmcp;
-mod server;
+// mod server;    // Legacy server implementation, replaced by pmcp
 mod tools;
 mod utils;
 
-#[cfg(feature = "database")]
-mod database;
+// Database module removed - MCP servers should be simple and stateless
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
+    #[command(subcommand)]
+    command: Option<Command>,
+
     /// Port to run the MCP server on
     #[arg(short, long, default_value = "3000")]
     port: u16,
@@ -29,11 +31,6 @@ struct Cli {
     #[arg(long)]
     gpu: bool,
 
-    /// Database URL for persistent storage (requires database feature)
-    #[cfg(feature = "database")]
-    #[arg(long)]
-    database_url: Option<String>,
-
     /// Configuration file path
     #[arg(short, long)]
     config: Option<PathBuf>,
@@ -41,6 +38,12 @@ struct Cli {
     /// Log level
     #[arg(long, default_value = "info")]
     log_level: String,
+}
+
+#[derive(Parser)]
+enum Command {
+    /// Start the MCP server (default)
+    Serve,
 }
 
 #[tokio::main]
@@ -66,29 +69,21 @@ async fn main() -> Result<()> {
         warn!("   GPU acceleration: disabled (use --gpu to enable)");
     }
 
-    // Create database pool if configured
-    #[cfg(feature = "database")]
-    let db_pool = if let Some(ref db_url) = cli.database_url {
-        info!("   Database: {}", db_url);
-        let pool = sqlx::PgPool::connect(db_url).await?;
-        sqlx::migrate!("./migrations").run(&pool).await?;
-        info!("   Database connected and migrations applied");
-        Some(pool)
-    } else {
-        None
-    };
+    // Database support removed - MCP servers should be simple and stateless
 
-    // Create and start the MCP server using pmcp
-    let server = mcp_pmcp::create_amari_mcp_server(
-        cli.gpu,
-        #[cfg(feature = "database")]
-        db_pool.is_some(),
-    ).await?;
+    // Handle subcommands
+    match cli.command.as_ref().unwrap_or(&Command::Serve) {
+        Command::Serve => {
+            // Create and start the MCP server using pmcp
+            let server = mcp_pmcp::create_amari_mcp_server(cli.gpu).await?;
 
-    info!("🌐 Starting MCP server with stdio transport");
+            info!("Starting MCP server with stdio transport");
+            info!("Cayley tables will use on-demand computation");
 
-    // Run the server with stdio transport (MCP standard)
-    server.run_stdio().await?;
+            // Run the server with stdio transport (MCP standard)
+            server.run_stdio().await?;
+        }
+    }
 
     Ok(())
 }

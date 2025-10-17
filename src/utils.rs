@@ -2,9 +2,12 @@ use anyhow::Result;
 use serde_json::Value;
 
 /// Utility functions for the Amari MCP server
-
 /// Validate multivector coefficients for given signature
-pub fn validate_multivector_coefficients(coefficients: &[f64], signature: &[usize; 3]) -> Result<()> {
+#[allow(dead_code)]
+pub fn validate_multivector_coefficients(
+    coefficients: &[f64],
+    signature: &[usize; 3],
+) -> Result<()> {
     let expected_size = 1 << (signature[0] + signature[1] + signature[2]);
 
     if coefficients.len() != expected_size {
@@ -20,10 +23,11 @@ pub fn validate_multivector_coefficients(coefficients: &[f64], signature: &[usiz
 }
 
 /// Parse signature from JSON value with defaults
+#[allow(dead_code)]
 pub fn parse_signature(value: Option<&Value>) -> [usize; 3] {
     if let Some(sig_array) = value.and_then(|v| v.as_array()) {
         [
-            sig_array.get(0).and_then(|v| v.as_u64()).unwrap_or(3) as usize,
+            sig_array.first().and_then(|v| v.as_u64()).unwrap_or(3) as usize,
             sig_array.get(1).and_then(|v| v.as_u64()).unwrap_or(0) as usize,
             sig_array.get(2).and_then(|v| v.as_u64()).unwrap_or(0) as usize,
         ]
@@ -33,6 +37,7 @@ pub fn parse_signature(value: Option<&Value>) -> [usize; 3] {
 }
 
 /// Convert f64 to JSON value, handling infinities and NaNs
+#[allow(dead_code)]
 pub fn float_to_json(value: f64) -> Value {
     if value.is_infinite() {
         if value.is_sign_positive() {
@@ -48,6 +53,7 @@ pub fn float_to_json(value: f64) -> Value {
 }
 
 /// Convert matrix to JSON, handling special float values
+#[allow(dead_code)]
 pub fn matrix_to_json(matrix: &[Vec<f64>]) -> Value {
     let json_matrix: Vec<Vec<Value>> = matrix
         .iter()
@@ -87,8 +93,14 @@ mod tests {
     #[test]
     fn test_float_to_json() {
         assert_eq!(float_to_json(1.5), Value::from(1.5));
-        assert_eq!(float_to_json(f64::INFINITY), Value::String("Infinity".to_string()));
-        assert_eq!(float_to_json(f64::NEG_INFINITY), Value::String("-Infinity".to_string()));
+        assert_eq!(
+            float_to_json(f64::INFINITY),
+            Value::String("Infinity".to_string())
+        );
+        assert_eq!(
+            float_to_json(f64::NEG_INFINITY),
+            Value::String("-Infinity".to_string())
+        );
         assert_eq!(float_to_json(f64::NAN), Value::String("NaN".to_string()));
     }
 }

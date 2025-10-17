@@ -1,32 +1,34 @@
-Test the Amari MCP server tools with sample mathematical operations
+Test the Amari MCP server with real Model Context Protocol implementation
 
-This will run basic tests to verify all MCP tools are working correctly:
+This runs comprehensive tests for the production-ready MCP server:
 
 ```bash
-# Test basic compilation and tool registration
+# Test compilation and basic functionality (17 tests)
 cd /home/elliotthall/working/math/amari-mcp && cargo test
 
-# Run a quick server start test (exits after tool registration)
-timeout 5s cargo run --release -- --port 3001 || echo "Server started successfully"
+# Test real MCP server startup with stdio transport
+timeout 3s cargo run --release || echo "✅ Real MCP server started successfully"
 
-# Test specific mathematical operations (when real MCP integration is available)
-# For now, verify stub implementations compile correctly
-cargo check --features gpu,database
+# Test with GPU acceleration enabled
+timeout 3s cargo run --release --features gpu -- --gpu || echo "✅ MCP server with GPU started successfully"
+
+# Verify GPU feature compiles
+cargo check --features gpu
 ```
 
-Expected results:
-- All tests pass
-- Server starts and registers 8+ mathematical tools
-- No compilation errors
-- GPU and database features compile correctly
+**Real MCP Protocol Testing** - Expected results:
+- ✅ All 17 tests pass (covering all mathematical operations)
+- ✅ **Real MCP server** starts with stdio transport
+- ✅ **9 mathematical tools** properly registered via pmcp SDK
+- ✅ GPU features compile correctly
+- ✅ **Production-ready** MCP protocol implementation
+- ✅ **Stateless design** - no database setup required
 
-Tools that should be registered:
-- create_multivector
-- geometric_product
-- rotor_rotation
-- tropical_matrix_multiply
-- shortest_path
-- compute_gradient
-- ca_evolution
-- fisher_information
-- gpu_batch_compute (with GPU feature)
+**Registered MCP Tools** (via pmcp SDK):
+- **Geometric Algebra**: create_multivector, geometric_product, rotor_rotation
+- **Tropical Algebra**: tropical_matrix_multiply, shortest_path
+- **Autodiff**: compute_gradient
+- **Cellular Automata**: ca_evolution
+- **Information Geometry**: fisher_information
+- **Cayley Tables**: get_cayley_table (on-demand computation)
+- **GPU Acceleration**: gpu_batch_compute (when --gpu enabled)

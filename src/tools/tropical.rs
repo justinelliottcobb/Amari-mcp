@@ -1,9 +1,10 @@
 use anyhow::Result;
-use amari::*; // Using amari::* instead of prelude until we verify the API
-use serde_json::{Value, json};
+// use amari::*; // Using amari::* instead of prelude until we verify the API
+use serde_json::{json, Value};
 use tracing::info;
 
 /// Tropical matrix multiplication (min-plus algebra)
+#[allow(clippy::needless_range_loop)]
 pub async fn matrix_multiply(params: Value) -> Result<Value> {
     let matrix_a: Vec<Vec<f64>> = params["matrix_a"]
         .as_array()
@@ -13,7 +14,10 @@ pub async fn matrix_multiply(params: Value) -> Result<Value> {
             row.as_array()
                 .ok_or_else(|| anyhow::anyhow!("Each row must be an array"))?
                 .iter()
-                .map(|v| v.as_f64().ok_or_else(|| anyhow::anyhow!("Invalid matrix element")))
+                .map(|v| {
+                    v.as_f64()
+                        .ok_or_else(|| anyhow::anyhow!("Invalid matrix element"))
+                })
                 .collect::<Result<Vec<_>>>()
         })
         .collect::<Result<Vec<_>>>()?;
@@ -26,21 +30,33 @@ pub async fn matrix_multiply(params: Value) -> Result<Value> {
             row.as_array()
                 .ok_or_else(|| anyhow::anyhow!("Each row must be an array"))?
                 .iter()
-                .map(|v| v.as_f64().ok_or_else(|| anyhow::anyhow!("Invalid matrix element")))
+                .map(|v| {
+                    v.as_f64()
+                        .ok_or_else(|| anyhow::anyhow!("Invalid matrix element"))
+                })
                 .collect::<Result<Vec<_>>>()
         })
         .collect::<Result<Vec<_>>>()?;
 
     let rows_a = matrix_a.len();
-    let cols_a = matrix_a.get(0).map(|r| r.len()).unwrap_or(0);
+    let cols_a = matrix_a.first().map(|r| r.len()).unwrap_or(0);
     let rows_b = matrix_b.len();
-    let cols_b = matrix_b.get(0).map(|r| r.len()).unwrap_or(0);
+    let cols_b = matrix_b.first().map(|r| r.len()).unwrap_or(0);
 
     if cols_a != rows_b {
-        return Err(anyhow::anyhow!("Matrix dimensions incompatible: {}x{} * {}x{}", rows_a, cols_a, rows_b, cols_b));
+        return Err(anyhow::anyhow!(
+            "Matrix dimensions incompatible: {}x{} * {}x{}",
+            rows_a,
+            cols_a,
+            rows_b,
+            cols_b
+        ));
     }
 
-    info!("Tropical matrix multiplication: {}x{} * {}x{}", rows_a, cols_a, rows_b, cols_b);
+    info!(
+        "Tropical matrix multiplication: {}x{} * {}x{}",
+        rows_a, cols_a, rows_b, cols_b
+    );
 
     // Convert to TropicalMatrix (assuming this exists in amari-tropical)
     let mut result = vec![vec![f64::INFINITY; cols_b]; rows_a];
@@ -83,7 +99,8 @@ pub async fn shortest_path(params: Value) -> Result<Value> {
                     if v.is_null() {
                         Ok(f64::INFINITY)
                     } else {
-                        v.as_f64().ok_or_else(|| anyhow::anyhow!("Invalid matrix element"))
+                        v.as_f64()
+                            .ok_or_else(|| anyhow::anyhow!("Invalid matrix element"))
                     }
                 })
                 .collect::<Result<Vec<_>>>()
@@ -102,23 +119,34 @@ pub async fn shortest_path(params: Value) -> Result<Value> {
     }
 
     if source >= n {
-        return Err(anyhow::anyhow!("Source vertex {} out of range [0, {})", source, n));
+        return Err(anyhow::anyhow!(
+            "Source vertex {} out of range [0, {})",
+            source,
+            n
+        ));
     }
 
     if let Some(t) = target {
         if t >= n {
-            return Err(anyhow::anyhow!("Target vertex {} out of range [0, {})", t, n));
+            return Err(anyhow::anyhow!(
+                "Target vertex {} out of range [0, {})",
+                t,
+                n
+            ));
         }
     }
 
-    info!("Computing shortest paths from vertex {} in {}-vertex graph", source, n);
+    info!(
+        "Computing shortest paths from vertex {} in {}-vertex graph",
+        source, n
+    );
 
     // Floyd-Warshall algorithm using tropical algebra
     let mut dist = adjacency_matrix.clone();
 
     // Initialize diagonal to 0 (identity in tropical algebra)
-    for i in 0..n {
-        dist[i][i] = 0.0;
+    for (i, row) in dist.iter_mut().enumerate().take(n) {
+        row[i] = 0.0;
     }
 
     // Floyd-Warshall iterations

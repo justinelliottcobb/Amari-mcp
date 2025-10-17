@@ -1,5 +1,5 @@
 use anyhow::Result;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use tracing::info;
 
 /// Compute gradient using automatic differentiation
@@ -12,7 +12,11 @@ pub async fn compute_gradient(params: Value) -> Result<Value> {
         .as_array()
         .ok_or_else(|| anyhow::anyhow!("variables must be an array"))?
         .iter()
-        .map(|v| v.as_str().ok_or_else(|| anyhow::anyhow!("Invalid variable name")).map(|s| s.to_string()))
+        .map(|v| {
+            v.as_str()
+                .ok_or_else(|| anyhow::anyhow!("Invalid variable name"))
+                .map(|s| s.to_string())
+        })
         .collect::<Result<Vec<_>>>()?;
 
     let values: Vec<f64> = params["values"]
@@ -26,7 +30,10 @@ pub async fn compute_gradient(params: Value) -> Result<Value> {
         return Err(anyhow::anyhow!("Number of variables and values must match"));
     }
 
-    info!("Computing gradient of '{}' with respect to {:?}", expression, variables);
+    info!(
+        "Computing gradient of '{}' with respect to {:?}",
+        expression, variables
+    );
 
     // TODO: Implement expression parsing and automatic differentiation
     // For now, return a placeholder

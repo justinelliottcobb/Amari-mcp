@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Amari Contributors"]
 license = "MIT OR Apache-2.0"
-description = "Model Context Protocol server for Amari mathematical computing library"
+description = "Simple, stateless MCP server for Amari mathematical computing - geometric algebra, tropical algebra, autodiff, and GPU acceleration"
 repository = "https://github.com/justinelliottcobb/amari-mcp"
 homepage = "https://github.com/justinelliottcobb/amari-mcp"
 keywords = ["mcp", "mathematics", "geometric-algebra", "tropical-algebra", "gpu"]
@@ -19,6 +19,7 @@ pmcp = "1.1"
 
 # Async runtime
 tokio = { version = "1.0", features = ["full"] }
+tokio-util = "0.7"
 async-trait = "0.1"
 
 # Serialization
@@ -37,17 +38,20 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Time and ID utilities (always available)
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4"] }
+sha2 = "0.10"
 
-# Optional database support
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json"], optional = true }
+# Database support removed - MCP servers should be simple and stateless
 
 # CLI
 clap = { version = "4.0", features = ["derive"] }
 
 [features]
 default = []
-database = ["dep:sqlx"]
 gpu = ["amari/gpu"]
+
+[lib]
+name = "amari_mcp"
+path = "src/lib.rs"
 
 [[bin]]
 name = "amari-mcp"
@@ -55,6 +59,8 @@ path = "src/main.rs"
 
 [dev-dependencies]
 approx = "0.5"
+tokio-test = "0.4"
+tempfile = "3.0"
 
 [workspace]
 # Empty workspace table to prevent this from being part of parent workspace

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "amari": {
+      "command": "/path/to/amari-mcp/target/release/amari-mcp",
+      "args": ["--log-level", "info"],
+      "env": {
+        "RUST_LOG": "amari_mcp=info"
+      }
+    }
+  }
+}
