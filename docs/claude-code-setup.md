@@ -49,7 +49,14 @@ In Claude Code, connect to your local MCP server using stdio transport:
 
 ### 3. Available Tools
 
-Once connected, you'll have access to these tools in Claude Code:
+Once connected, you'll have access to these tools in Claude Code for developing Amari applications:
+
+#### Library Development Tools
+- `browse_docs` - Browse Amari module documentation and API information
+- `analyze_code` - Analyze source code structure, exports, and dependencies
+- `scaffold_project` - Generate project templates (basic, library, GPU, WebAssembly)
+- `generate_code` - Create code examples for specific Amari operations
+- `search_patterns` - Search for patterns and idioms in the Amari codebase
 
 #### Core Mathematical Operations
 - `create_multivector` - Create multivectors from coefficients

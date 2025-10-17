@@ -142,11 +142,76 @@ impl ToolHandler for GpuBatchHandler {
 /// Tool handler for Cayley table operations
 pub struct CayleyTableHandler;
 
+/// Tool handler for library documentation browsing
+pub struct LibraryDocsHandler;
+
+/// Tool handler for code analysis
+pub struct CodeAnalysisHandler;
+
+/// Tool handler for project scaffolding
+pub struct ProjectScaffoldHandler;
+
+/// Tool handler for code generation
+pub struct CodeGenerationHandler;
+
+/// Tool handler for pattern searching
+pub struct PatternSearchHandler;
+
 #[async_trait]
 impl ToolHandler for CayleyTableHandler {
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
         info!("Retrieving Cayley table");
         cayley_tables::get_cayley_table(args)
+            .await
+            .map_err(|e| McpError::Internal(e.to_string()))
+    }
+}
+
+#[async_trait]
+impl ToolHandler for LibraryDocsHandler {
+    async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
+        info!("📚 Browsing Amari library documentation");
+        library_access::browse_docs(args)
+            .await
+            .map_err(|e| McpError::Internal(e.to_string()))
+    }
+}
+
+#[async_trait]
+impl ToolHandler for CodeAnalysisHandler {
+    async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
+        info!("🔍 Analyzing Amari code structure");
+        library_access::analyze_code(args)
+            .await
+            .map_err(|e| McpError::Internal(e.to_string()))
+    }
+}
+
+#[async_trait]
+impl ToolHandler for ProjectScaffoldHandler {
+    async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
+        info!("🏗️ Scaffolding Amari project");
+        library_access::scaffold_project(args)
+            .await
+            .map_err(|e| McpError::Internal(e.to_string()))
+    }
+}
+
+#[async_trait]
+impl ToolHandler for CodeGenerationHandler {
+    async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
+        info!("💻 Generating Amari code examples");
+        library_access::generate_code(args)
+            .await
+            .map_err(|e| McpError::Internal(e.to_string()))
+    }
+}
+
+#[async_trait]
+impl ToolHandler for PatternSearchHandler {
+    async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
+        info!("🔎 Searching Amari codebase patterns");
+        library_access::search_patterns(args)
             .await
             .map_err(|e| McpError::Internal(e.to_string()))
     }
@@ -172,6 +237,14 @@ pub async fn create_amari_mcp_server(gpu_enabled: bool) -> Result<Server> {
         .tool("ca_evolution", CellularAutomataHandler)
         .tool("fisher_information", FisherInformationHandler)
         .tool("get_cayley_table", CayleyTableHandler);
+
+    // Register library access and development tools
+    server_builder = server_builder
+        .tool("browse_docs", LibraryDocsHandler)
+        .tool("analyze_code", CodeAnalysisHandler)
+        .tool("scaffold_project", ProjectScaffoldHandler)
+        .tool("generate_code", CodeGenerationHandler)
+        .tool("search_patterns", PatternSearchHandler);
 
     // Add GPU tools if enabled
     if gpu_enabled {
@@ -287,4 +360,161 @@ mod tests {
     }
 
     // Database tests removed - MCP servers should be simple and stateless
+
+    #[tokio::test]
+    async fn test_library_docs_handler() {
+        let handler = LibraryDocsHandler;
+        let args = json!({
+            "module": "core"
+        });
+
+        let result = handler.handle(args, mock_extra()).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert!(response["success"].is_boolean());
+    }
+
+    #[tokio::test]
+    async fn test_library_docs_handler_unknown_module() {
+        let handler = LibraryDocsHandler;
+        let args = json!({
+            "module": "unknown_module"
+        });
+
+        let result = handler.handle(args, mock_extra()).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response["success"], false);
+        assert!(response["error"].as_str().unwrap().contains("Unknown module"));
+    }
+
+    #[tokio::test]
+    async fn test_code_analysis_handler() {
+        let handler = CodeAnalysisHandler;
+        let args = json!({
+            "target": "structure"
+        });
+
+        let result = handler.handle(args, mock_extra()).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert!(response["success"].is_boolean());
+    }
+
+    #[tokio::test]
+    async fn test_code_analysis_handler_unknown_target() {
+        let handler = CodeAnalysisHandler;
+        let args = json!({
+            "target": "unknown_target"
+        });
+
+        let result = handler.handle(args, mock_extra()).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response["success"], false);
+        assert!(response["error"].as_str().unwrap().contains("Unknown analysis target"));
+    }
+
+    #[tokio::test]
+    async fn test_project_scaffold_handler() {
+        let handler = ProjectScaffoldHandler;
+        let args = json!({
+            "type": "basic",
+            "name": "test-project"
+        });
+
+        let result = handler.handle(args, mock_extra()).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response["success"], true);
+        assert_eq!(response["project_type"], "basic");
+        assert_eq!(response["name"], "test-project");
+    }
+
+    #[tokio::test]
+    async fn test_project_scaffold_handler_unknown_type() {
+        let handler = ProjectScaffoldHandler;
+        let args = json!({
+            "type": "unknown_type",
+            "name": "test-project"
+        });
+
+        let result = handler.handle(args, mock_extra()).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response["success"], false);
+        assert!(response["error"].as_str().unwrap().contains("Unknown project type"));
+    }
+
+    #[tokio::test]
+    async fn test_code_generation_handler() {
+        let handler = CodeGenerationHandler;
+        let args = json!({
+            "operation": "multivector",
+            "context": "basic"
+        });
+
+        let result = handler.handle(args, mock_extra()).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response["success"], true);
+        assert_eq!(response["operation"], "multivector");
+        assert_eq!(response["context"], "basic");
+        assert!(response["code"].is_string());
+    }
+
+    #[tokio::test]
+    async fn test_code_generation_handler_unknown_operation() {
+        let handler = CodeGenerationHandler;
+        let args = json!({
+            "operation": "unknown_operation"
+        });
+
+        let result = handler.handle(args, mock_extra()).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response["success"], false);
+        assert!(response["error"].as_str().unwrap().contains("Unknown operation"));
+    }
+
+    #[tokio::test]
+    async fn test_pattern_search_handler() {
+        let handler = PatternSearchHandler;
+        let args = json!({
+            "pattern": "geometric_product",
+            "scope": "core"
+        });
+
+        let result = handler.handle(args, mock_extra()).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response["success"], true);
+        assert_eq!(response["pattern"], "geometric_product");
+        assert_eq!(response["scope"], "core");
+    }
+
+    #[tokio::test]
+    async fn test_pattern_search_handler_empty_pattern() {
+        let handler = PatternSearchHandler;
+        let args = json!({
+            "pattern": "",
+            "scope": "all"
+        });
+
+        let result = handler.handle(args, mock_extra()).await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert_eq!(response["success"], false);
+        assert!(response["error"].as_str().unwrap().contains("Pattern cannot be empty"));
+    }
 }

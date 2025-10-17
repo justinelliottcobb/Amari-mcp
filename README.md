@@ -1,8 +1,8 @@
 # Amari MCP Server
 
-**Model Context Protocol server** for the Amari mathematical computing library, providing Claude Code and other AI assistants with access to advanced geometric algebra, tropical algebra, automatic differentiation, and GPU-accelerated computations.
+**Comprehensive library access MCP server** for the Amari mathematical computing ecosystem. Designed to provide Claude Code with full access to the Amari library for developing mathematical applications, not just specific computations.
 
-**Simple & Focused** - Stateless MCP server using `pmcp` Rust SDK with stdio transport
+**Library-Focused** - Exposes the entire Amari ecosystem for application development with documentation browsing, code analysis, project scaffolding, and pattern generation tools.
 
 ## 🚀 Quick Start for Claude Code
 
@@ -41,6 +41,13 @@ cargo run --release
 ### MCP Tools Available
 
 All tools implemented with `pmcp` SDK and real MCP protocol over stdio transport.
+
+#### Library Development Tools
+- `browse_docs` - Browse Amari module documentation and API information
+- `analyze_code` - Analyze source code structure, exports, and dependencies
+- `scaffold_project` - Generate project templates (basic, library, GPU, WebAssembly)
+- `generate_code` - Create code examples for specific Amari operations
+- `search_patterns` - Search for patterns and idioms in the Amari codebase
 
 #### Core Mathematical Operations
 - `create_multivector` - Create multivectors from coefficients and signatures
@@ -98,6 +105,40 @@ cargo run --release --features gpu -- --gpu
 - ✅ **On-demand computation** - fast mathematical operations
 
 ## MCP Tool Examples
+
+### Library Development Tools
+
+```python
+# Browse documentation for a specific module
+docs = await mcp_client.call_tool("browse_docs", {
+    "module": "core",
+    "query": "Multivector"
+})
+
+# Analyze project structure
+structure = await mcp_client.call_tool("analyze_code", {
+    "target": "structure"
+})
+
+# Generate a new Amari application
+project = await mcp_client.call_tool("scaffold_project", {
+    "type": "basic",
+    "name": "my-amari-app",
+    "features": ["gpu", "serde"]
+})
+
+# Generate code examples for geometric operations
+code = await mcp_client.call_tool("generate_code", {
+    "operation": "multivector",
+    "context": "physics"
+})
+
+# Search for patterns in the codebase
+patterns = await mcp_client.call_tool("search_patterns", {
+    "pattern": "geometric_product",
+    "scope": "core"
+})
+```
 
 ### Geometric Algebra
 
@@ -228,12 +269,13 @@ amari-mcp/
 
 ## Design Philosophy
 
-This MCP server follows the principle that **MCP servers should be simple, stateless interfaces** that expose core functionality without complex caching or state management.
+This MCP server provides **comprehensive library access** rather than just mathematical operations. It's designed to help you develop Amari-dependent applications by exposing the entire library ecosystem.
 
-- **On-demand computation**: All operations computed when requested
-- **No database complexity**: Simple, fast startup with no setup required
-- **Focused scope**: Clean interface to Amari's mathematical operations
-- **Perfect for Claude Code**: Optimized for interactive AI assistant sessions
+- **Library-focused**: Full access to Amari documentation, code structure, and patterns
+- **Development-oriented**: Tools for scaffolding, code generation, and project analysis
+- **On-demand computation**: All operations computed when requested (no caching complexity)
+- **Educational**: Browse docs, understand APIs, learn patterns and idioms
+- **Perfect for Claude Code**: Optimized for AI-assisted application development
 
 ## Contributing
 
