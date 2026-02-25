@@ -425,6 +425,15 @@ fn line_of(span: proc_macro2::Span) -> usize {
     span.start().line
 }
 
+fn merge_feature_gate(inherited: Option<&str>, own: Option<&str>) -> Option<String> {
+    match (inherited, own) {
+        (None, None) => None,
+        (Some(i), None) => Some(i.to_string()),
+        (None, Some(o)) => Some(o.to_string()),
+        (Some(i), Some(o)) => Some(format!("{i} + {o}")),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -666,14 +675,5 @@ mod tests {
         let items = parse_and_extract(source);
         assert!(items[0].signature.contains("where"));
         assert!(items[0].signature.contains("Clone"));
-    }
-}
-
-fn merge_feature_gate(inherited: Option<&str>, own: Option<&str>) -> Option<String> {
-    match (inherited, own) {
-        (None, None) => None,
-        (Some(i), None) => Some(i.to_string()),
-        (None, Some(o)) => Some(o.to_string()),
-        (Some(i), Some(o)) => Some(format!("{i} + {o}")),
     }
 }
