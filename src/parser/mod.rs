@@ -14,12 +14,16 @@ use std::path::Path;
 
 /// Build an API index from the library described by the manifest.
 ///
-/// Discovers workspace crates, then parses each crate in parallel
-/// via rayon to extract the full public API surface.
-pub fn build_index(manifest: &LibraryManifest) -> Result<ApiIndex<Unvalidated>> {
-    let source_root = manifest.resolve_source_path(
-        &std::env::current_dir()?.join(format!("manifests/{}.toml", manifest.library.name)),
-    );
+/// `manifest_path` is the path to the TOML manifest file, used to resolve
+/// the relative `source_path` within it. Discovers workspace crates, then
+/// parses each crate in parallel via rayon to extract the full public API surface.
+pub fn build_index(
+    manifest: &LibraryManifest,
+    manifest_path: &Path,
+) -> Result<ApiIndex<Unvalidated>> {
+    let manifest_path =
+        std::fs::canonicalize(manifest_path).unwrap_or_else(|_| manifest_path.to_path_buf());
+    let source_root = manifest.resolve_source_path(&manifest_path);
 
     let resolved_crates = manifest.all_user_facing_crates();
 
@@ -77,5 +81,5 @@ pub fn build_index(manifest: &LibraryManifest) -> Result<ApiIndex<Unvalidated>> 
 /// Build an index from a manifest file path.
 pub fn build_index_from_path(manifest_path: &Path) -> Result<ApiIndex<Unvalidated>> {
     let manifest = LibraryManifest::load(manifest_path)?;
-    build_index(&manifest)
+    build_index(&manifest, manifest_path)
 }

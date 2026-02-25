@@ -6,12 +6,14 @@
 
 use std::path::Path;
 
+const MANIFEST_PATH: &str = "manifests/amari.toml";
+
 fn amari_source_available() -> bool {
     // The manifest resolves source_path relative to itself.
     // manifests/amari.toml says source_path = "../../amari"
     // so from the manifest dir: manifests/../../amari = ../amari
     // But from the repo root (where tests run): ../../amari
-    let manifest_path = Path::new("manifests/amari.toml");
+    let manifest_path = Path::new(MANIFEST_PATH);
     if !manifest_path.exists() {
         return false;
     }
@@ -27,7 +29,7 @@ fn amari_source_available() -> bool {
 
 #[test]
 fn manifest_loads_correctly() {
-    let manifest = amari_mcp::config::LibraryManifest::load(Path::new("manifests/amari.toml"))
+    let manifest = amari_mcp::config::LibraryManifest::load(Path::new(MANIFEST_PATH))
         .expect("Failed to load amari manifest");
     assert_eq!(manifest.library.name, "amari");
     assert_eq!(manifest.library.display_name, "Amari");
@@ -47,10 +49,11 @@ fn full_index_build_and_validate() {
         return;
     }
 
-    let manifest = amari_mcp::config::LibraryManifest::load(Path::new("manifests/amari.toml"))
+    let manifest = amari_mcp::config::LibraryManifest::load(Path::new(MANIFEST_PATH))
         .expect("Failed to load manifest");
 
-    let index = amari_mcp::parser::build_index(&manifest).expect("Failed to build index");
+    let index = amari_mcp::parser::build_index(&manifest, Path::new(MANIFEST_PATH))
+        .expect("Failed to build index");
 
     let parse_errors = index.parse_errors.len();
     let validated = index.validate().expect("Validation failed");
@@ -84,10 +87,11 @@ fn multivector_found_with_const_generics() {
         return;
     }
 
-    let manifest = amari_mcp::config::LibraryManifest::load(Path::new("manifests/amari.toml"))
+    let manifest = amari_mcp::config::LibraryManifest::load(Path::new(MANIFEST_PATH))
         .expect("Failed to load manifest");
 
-    let index = amari_mcp::parser::build_index(&manifest).expect("Failed to build index");
+    let index = amari_mcp::parser::build_index(&manifest, Path::new(MANIFEST_PATH))
+        .expect("Failed to build index");
     let validated = index.validate().expect("Validation failed");
 
     let results = validated.search("Multivector");
@@ -129,10 +133,11 @@ fn feature_gated_crates_detected() {
         return;
     }
 
-    let manifest = amari_mcp::config::LibraryManifest::load(Path::new("manifests/amari.toml"))
+    let manifest = amari_mcp::config::LibraryManifest::load(Path::new(MANIFEST_PATH))
         .expect("Failed to load manifest");
 
-    let index = amari_mcp::parser::build_index(&manifest).expect("Failed to build index");
+    let index = amari_mcp::parser::build_index(&manifest, Path::new(MANIFEST_PATH))
+        .expect("Failed to build index");
     let validated = index.validate().expect("Validation failed");
 
     // Check that feature-gated crates have their feature gate set
@@ -163,10 +168,11 @@ fn module_docs_extracted() {
         return;
     }
 
-    let manifest = amari_mcp::config::LibraryManifest::load(Path::new("manifests/amari.toml"))
+    let manifest = amari_mcp::config::LibraryManifest::load(Path::new(MANIFEST_PATH))
         .expect("Failed to load manifest");
 
-    let index = amari_mcp::parser::build_index(&manifest).expect("Failed to build index");
+    let index = amari_mcp::parser::build_index(&manifest, Path::new(MANIFEST_PATH))
+        .expect("Failed to build index");
     let validated = index.validate().expect("Validation failed");
 
     // At least one crate should have module-level documentation
@@ -185,10 +191,11 @@ fn check_mode_runs_successfully() {
     }
 
     // Simulate what the `check` subcommand does
-    let manifest = amari_mcp::config::LibraryManifest::load(Path::new("manifests/amari.toml"))
+    let manifest = amari_mcp::config::LibraryManifest::load(Path::new(MANIFEST_PATH))
         .expect("Failed to load manifest");
 
-    let index = amari_mcp::parser::build_index(&manifest).expect("build_index should succeed");
+    let index = amari_mcp::parser::build_index(&manifest, Path::new(MANIFEST_PATH))
+        .expect("build_index should succeed");
     let validated = index.validate().expect("validate should succeed");
     let stats = validated.stats();
 

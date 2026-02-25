@@ -50,14 +50,14 @@ async fn main() -> Result<()> {
 
     match cli.command.as_ref().unwrap_or(&Command::Serve) {
         Command::Serve => {
-            let index = amari_mcp::parser::build_index(&manifest)?;
+            let index = amari_mcp::parser::build_index(&manifest, &cli.manifest)?;
             let validated = index.validate()?;
             info!("Index validated successfully");
 
             amari_mcp::mcp_pmcp::create_mcp_server(validated, manifest).await?;
         }
         Command::Check => {
-            let index = amari_mcp::parser::build_index(&manifest)?;
+            let index = amari_mcp::parser::build_index(&manifest, &cli.manifest)?;
             let parse_error_count = index.parse_errors.len();
 
             match index.validate() {
