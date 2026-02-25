@@ -1,6 +1,6 @@
 use super::SharedState;
 use async_trait::async_trait;
-use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler, ToolInfo};
+use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -10,13 +10,11 @@ pub struct UsageExamplesHandler {
 
 #[async_trait]
 impl ToolHandler for UsageExamplesHandler {
-    fn metadata(&self) -> Option<ToolInfo> {
-        Some(ToolInfo {
-            name: "usage_examples".to_string(),
-            description: Some(
-                "Extract code examples from doc comments for a type or function".to_string(),
-            ),
-            input_schema: json!({
+    fn metadata(&self) -> Option<pmcp::ToolInfo> {
+        Some(super::tool_info(
+            "usage_examples",
+            "Extract code examples from doc comments for a type or function",
+            json!({
                 "type": "object",
                 "properties": {
                     "name": {
@@ -26,7 +24,7 @@ impl ToolHandler for UsageExamplesHandler {
                 },
                 "required": ["name"]
             }),
-        })
+        ))
     }
 
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {

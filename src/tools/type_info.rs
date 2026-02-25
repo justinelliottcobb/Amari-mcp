@@ -1,7 +1,7 @@
 use super::SharedState;
 use crate::parser::index::{FieldKind, ItemKind};
 use async_trait::async_trait;
-use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler, ToolInfo};
+use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -11,11 +11,11 @@ pub struct TypeInfoHandler {
 
 #[async_trait]
 impl ToolHandler for TypeInfoHandler {
-    fn metadata(&self) -> Option<ToolInfo> {
-        Some(ToolInfo {
-            name: "type_info".to_string(),
-            description: Some("Get full details on a specific type including signature, fields, methods, trait impls, and documentation".to_string()),
-            input_schema: json!({
+    fn metadata(&self) -> Option<pmcp::ToolInfo> {
+        Some(super::tool_info(
+            "type_info",
+            "Get full details on a specific type including signature, fields, methods, trait impls, and documentation",
+            json!({
                 "type": "object",
                 "properties": {
                     "name": {
@@ -25,7 +25,7 @@ impl ToolHandler for TypeInfoHandler {
                 },
                 "required": ["name"]
             }),
-        })
+        ))
     }
 
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {

@@ -2,7 +2,7 @@ use super::SharedState;
 use crate::parser::display;
 use crate::parser::index::ModuleInfo;
 use async_trait::async_trait;
-use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler, ToolInfo};
+use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -12,13 +12,11 @@ pub struct ModuleOverviewHandler {
 
 #[async_trait]
 impl ToolHandler for ModuleOverviewHandler {
-    fn metadata(&self) -> Option<ToolInfo> {
-        Some(ToolInfo {
-            name: "module_overview".to_string(),
-            description: Some(
-                "List all public items in a crate or module with brief descriptions".to_string(),
-            ),
-            input_schema: json!({
+    fn metadata(&self) -> Option<pmcp::ToolInfo> {
+        Some(super::tool_info(
+            "module_overview",
+            "List all public items in a crate or module with brief descriptions",
+            json!({
                 "type": "object",
                 "properties": {
                     "crate": {
@@ -36,7 +34,7 @@ impl ToolHandler for ModuleOverviewHandler {
                 },
                 "required": ["crate"]
             }),
-        })
+        ))
     }
 
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {

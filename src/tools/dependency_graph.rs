@@ -1,7 +1,7 @@
 use super::SharedState;
 use crate::parser::workspace;
 use async_trait::async_trait;
-use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler, ToolInfo};
+use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -11,13 +11,11 @@ pub struct DependencyGraphHandler {
 
 #[async_trait]
 impl ToolHandler for DependencyGraphHandler {
-    fn metadata(&self) -> Option<ToolInfo> {
-        Some(ToolInfo {
-            name: "dependency_graph".to_string(),
-            description: Some(
-                "Show inter-crate dependency relationships within the workspace".to_string(),
-            ),
-            input_schema: json!({
+    fn metadata(&self) -> Option<pmcp::ToolInfo> {
+        Some(super::tool_info(
+            "dependency_graph",
+            "Show inter-crate dependency relationships within the workspace",
+            json!({
                 "type": "object",
                 "properties": {
                     "crate": {
@@ -26,7 +24,7 @@ impl ToolHandler for DependencyGraphHandler {
                     }
                 }
             }),
-        })
+        ))
     }
 
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {

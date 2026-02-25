@@ -2,7 +2,7 @@ use super::SharedState;
 use crate::parser::display;
 use crate::parser::index::ItemKind;
 use async_trait::async_trait;
-use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler, ToolInfo};
+use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -12,13 +12,11 @@ pub struct ApiSearchHandler {
 
 #[async_trait]
 impl ToolHandler for ApiSearchHandler {
-    fn metadata(&self) -> Option<ToolInfo> {
-        Some(ToolInfo {
-            name: "api_search".to_string(),
-            description: Some(
-                "Search the library API for types, functions, traits, and more by name".to_string(),
-            ),
-            input_schema: json!({
+    fn metadata(&self) -> Option<pmcp::ToolInfo> {
+        Some(super::tool_info(
+            "api_search",
+            "Search the library API for types, functions, traits, and more by name",
+            json!({
                 "type": "object",
                 "properties": {
                     "query": {
@@ -41,7 +39,7 @@ impl ToolHandler for ApiSearchHandler {
                 },
                 "required": ["query"]
             }),
-        })
+        ))
     }
 
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {

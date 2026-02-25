@@ -1,6 +1,6 @@
 use super::SharedState;
 use async_trait::async_trait;
-use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler, ToolInfo};
+use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -10,13 +10,11 @@ pub struct FeatureMapHandler {
 
 #[async_trait]
 impl ToolHandler for FeatureMapHandler {
-    fn metadata(&self) -> Option<ToolInfo> {
-        Some(ToolInfo {
-            name: "feature_map".to_string(),
-            description: Some(
-                "Show which Cargo features enable which crates and types".to_string(),
-            ),
-            input_schema: json!({
+    fn metadata(&self) -> Option<pmcp::ToolInfo> {
+        Some(super::tool_info(
+            "feature_map",
+            "Show which Cargo features enable which crates and types",
+            json!({
                 "type": "object",
                 "properties": {
                     "feature": {
@@ -25,7 +23,7 @@ impl ToolHandler for FeatureMapHandler {
                     }
                 }
             }),
-        })
+        ))
     }
 
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {

@@ -1,6 +1,6 @@
 use super::SharedState;
 use async_trait::async_trait;
-use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler, ToolInfo};
+use pmcp::{Error as McpError, RequestHandlerExtra, ToolHandler};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -10,14 +10,11 @@ pub struct BrowseDocsHandler {
 
 #[async_trait]
 impl ToolHandler for BrowseDocsHandler {
-    fn metadata(&self) -> Option<ToolInfo> {
-        Some(ToolInfo {
-            name: "browse_docs".to_string(),
-            description: Some(
-                "Browse module-level and item-level documentation from the library source"
-                    .to_string(),
-            ),
-            input_schema: json!({
+    fn metadata(&self) -> Option<pmcp::ToolInfo> {
+        Some(super::tool_info(
+            "browse_docs",
+            "Browse module-level and item-level documentation from the library source",
+            json!({
                 "type": "object",
                 "properties": {
                     "crate": {
@@ -35,7 +32,7 @@ impl ToolHandler for BrowseDocsHandler {
                 },
                 "required": ["crate"]
             }),
-        })
+        ))
     }
 
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
