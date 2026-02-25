@@ -1,0 +1,70 @@
+# Library manifest for Amari
+# Describes the target library so the MCP server can dynamically
+# discover and index its API surface.
+
+[library]
+name = "amari"
+display_name = "Amari"
+version = "0.18.1"
+description = "Advanced mathematical computing library with geometric algebra, tropical algebra, and automatic differentiation"
+repository = "https://github.com/justinelliottcobb/Amari"
+docs_url = "https://docs.rs/amari"
+
+# Path to the library source root, resolved relative to this manifest file.
+source_path = "../../amari"
+
+[workspace]
+root_cargo_toml = "Cargo.toml"
+umbrella_crate = "src/lib.rs"
+
+[crates.default]
+members = [
+    "amari-core",
+    "amari-tropical",
+    "amari-dual",
+    "amari-fusion",
+    "amari-automata",
+    "amari-network",
+    "amari-info-geom",
+    "amari-enumerative",
+    "amari-relativistic",
+]
+
+[crates.optional]
+measure = "amari-measure"
+calculus = "amari-calculus"
+holographic = "amari-holographic"
+probabilistic = "amari-probabilistic"
+functional = "amari-functional"
+topology = "amari-topology"
+dynamics = "amari-dynamics"
+gpu = "amari-gpu"
+optimization = "amari-optimization"
+flynn = "amari-flynn"
+
+[crates.internal]
+members = [
+    "amari-flynn-macros",
+    "amari-wasm",
+]
+
+[aliases]
+amari-core = "core"
+amari-tropical = "tropical"
+amari-dual = "dual"
+amari-fusion = "fusion"
+amari-automata = "automata"
+amari-network = "network"
+amari-info-geom = "info_geom"
+amari-enumerative = "enumerative"
+amari-relativistic = "relativistic"
+amari-measure = "measure"
+amari-calculus = "calculus"
+amari-holographic = "holographic"
+amari-probabilistic = "probabilistic"
+amari-functional = "functional"
+amari-topology = "topology"
+amari-dynamics = "dynamics"
+amari-gpu = "gpu"
+amari-optimization = "optimization"
+amari-flynn = "flynn"

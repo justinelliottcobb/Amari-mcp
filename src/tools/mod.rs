@@ -1,11 +1,23 @@
-pub mod geometric_stub;
-pub use geometric_stub as geometric;
-pub mod autodiff;
-pub mod cayley_tables;
-pub mod cellular_automata;
-pub mod gpu;
-pub mod info_geometry;
-pub mod tropical;
-pub mod library_access;
+pub mod api_search;
+pub mod browse_docs;
+pub mod dependency_graph;
+pub mod feature_map;
+pub mod module_overview;
+pub mod type_info;
+pub mod usage_examples;
 
-// Database modules removed - MCP servers should be simple and stateless
+use crate::config::LibraryManifest;
+use crate::parser::index::{ApiIndex, Validated};
+use std::sync::Arc;
+
+/// Shared state passed to all tool handlers.
+pub struct SharedState {
+    pub index: ApiIndex<Validated>,
+    pub manifest: LibraryManifest,
+}
+
+impl SharedState {
+    pub fn new(index: ApiIndex<Validated>, manifest: LibraryManifest) -> Arc<Self> {
+        Arc::new(Self { index, manifest })
+    }
+}

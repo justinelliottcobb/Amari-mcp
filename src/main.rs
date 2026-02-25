@@ -1,39 +1,22 @@
 use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
-use tracing::{info, warn};
+use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-// mod mcp_stub;  // Legacy stub implementation, replaced by pmcp
-// mod mcp_real;  // Disabled while implementing pmcp
-mod mcp_pmcp;
-// mod server;    // Legacy server implementation, replaced by pmcp
-mod tools;
-mod utils;
-
-// Database module removed - MCP servers should be simple and stateless
-
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(
+    author,
+    version,
+    about = "Config-driven MCP server for Rust library API reference"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
 
-    /// Port to run the MCP server on
-    #[arg(short, long, default_value = "3000")]
-    port: u16,
-
-    /// Host to bind the server to
-    #[arg(long, default_value = "127.0.0.1")]
-    host: String,
-
-    /// Enable GPU acceleration (requires GPU feature)
-    #[arg(long)]
-    gpu: bool,
-
-    /// Configuration file path
-    #[arg(short, long)]
-    config: Option<PathBuf>,
+    /// Path to library manifest file
+    #[arg(short, long, default_value = "manifests/amari.toml")]
+    manifest: PathBuf,
 
     /// Log level
     #[arg(long, default_value = "info")]
@@ -44,46 +27,77 @@ struct Cli {
 enum Command {
     /// Start the MCP server (default)
     Serve,
+    /// Validate that the manifest and source are parseable
+    Check,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    // Initialize logging
+    // Initialize logging — stderr only so stdout is clean for MCP JSON-RPC
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| format!("amari_mcp={}", cli.log_level).into()),
         )
-        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::fmt::layer().with_writer(std::io::stderr))
         .init();
 
-    info!("🚀 Starting Amari MCP Server");
-    info!("   Host: {}", cli.host);
-    info!("   Port: {}", cli.port);
+    info!("Loading manifest from {:?}", cli.manifest);
+    let manifest = amari_mcp::config::LibraryManifest::load(&cli.manifest)?;
+    info!("Loaded manifest for {}", manifest.library.display_name);
 
-    if cli.gpu {
-        info!("   GPU acceleration: enabled");
-    } else {
-        warn!("   GPU acceleration: disabled (use --gpu to enable)");
-    }
-
-    // Database support removed - MCP servers should be simple and stateless
-
-    // Handle subcommands
     match cli.command.as_ref().unwrap_or(&Command::Serve) {
         Command::Serve => {
-            // Create and start the MCP server using pmcp
-            let server = mcp_pmcp::create_amari_mcp_server(cli.gpu).await?;
+            let index = amari_mcp::parser::build_index(&manifest)?;
+            let validated = index.validate()?;
+            info!("Index validated successfully");
 
-            info!("Starting MCP server with stdio transport");
-            info!("Cayley tables will use on-demand computation");
+            amari_mcp::mcp_pmcp::create_mcp_server(validated, manifest).await?;
+        }
+        Command::Check => {
+            let index = amari_mcp::parser::build_index(&manifest)?;
+            let parse_error_count = index.parse_errors.len();
 
-            // Run the server with stdio transport (MCP standard)
-            server.run_stdio().await?;
+            match index.validate() {
+                Ok(validated) => {
+                    let stats = validated.stats();
+                    println!("Library: {}", validated.library_name);
+                    println!(
+                        "Parsed {} crates, {} modules, {} items",
+                        stats.crate_count, stats.module_count, stats.item_count
+                    );
+                    for crate_info in &validated.crates {
+                        let item_count: usize = count_crate_items(&crate_info.modules);
+                        let feature_tag = crate_info
+                            .feature_gate
+                            .as_ref()
+                            .map(|f| format!(" [feature: {f}]"))
+                            .unwrap_or_default();
+                        println!("  {} ({} items){feature_tag}", crate_info.name, item_count);
+                    }
+                    if parse_error_count > 0 {
+                        println!("\n{parse_error_count} parse warning(s) (index still usable)");
+                    }
+                    println!("\nCheck passed.");
+                }
+                Err(report) => {
+                    for error in &report.errors {
+                        eprintln!("ERROR: {error}");
+                    }
+                    std::process::exit(1);
+                }
+            }
         }
     }
 
     Ok(())
+}
+
+fn count_crate_items(modules: &[amari_mcp::parser::index::ModuleInfo]) -> usize {
+    modules
+        .iter()
+        .map(|m| m.items.len() + count_crate_items(&m.submodules))
+        .sum()
 }
