@@ -32,9 +32,12 @@ impl ToolHandler for UsageExamplesHandler {
             .as_str()
             .ok_or_else(|| McpError::invalid_params("name is required"))?;
 
-        let matching: Vec<_> = self
+        let index = self
             .state
             .index
+            .read()
+            .map_err(|_| McpError::internal("index lock poisoned"))?;
+        let matching: Vec<_> = index
             .search(name)
             .into_iter()
             .filter(|i| i.name == name || i.full_path.ends_with(name))

@@ -1,11 +1,12 @@
 use anyhow::Result;
 use pmcp::{Server, ServerCapabilities};
+use std::path::PathBuf;
 use tracing::info;
 
 use crate::config::LibraryManifest;
 use crate::parser::index::{ApiIndex, Validated};
 use crate::tools::{
-    api_search, browse_docs, dependency_graph, feature_map, module_overview, type_info,
+    api_search, browse_docs, dependency_graph, feature_map, module_overview, reload, type_info,
     usage_examples, SharedState,
 };
 
@@ -13,10 +14,11 @@ use crate::tools::{
 pub async fn create_mcp_server(
     index: ApiIndex<Validated>,
     manifest: LibraryManifest,
+    manifest_path: PathBuf,
 ) -> Result<()> {
-    let state = SharedState::new(index, manifest);
+    let state = SharedState::new(index, manifest, manifest_path);
 
-    info!("Registering 7 MCP tools");
+    info!("Registering 8 MCP tools");
 
     let server = Server::builder()
         .name("amari-mcp")
@@ -61,6 +63,12 @@ pub async fn create_mcp_server(
         .tool(
             "usage_examples",
             usage_examples::UsageExamplesHandler {
+                state: state.clone(),
+            },
+        )
+        .tool(
+            "reload",
+            reload::ReloadHandler {
                 state: state.clone(),
             },
         )

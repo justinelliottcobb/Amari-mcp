@@ -215,3 +215,35 @@ fn check_mode_runs_successfully() {
         eprintln!("  {}{fg}", c.name);
     }
 }
+
+#[test]
+fn search_finds_kazhdan_lusztig_by_doc_and_path() {
+    if !amari_source_available() {
+        eprintln!("Skipping: Amari source not available");
+        return;
+    }
+
+    let manifest = amari_mcp::config::LibraryManifest::load(Path::new(MANIFEST_PATH))
+        .expect("Failed to load manifest");
+    let index = amari_mcp::parser::build_index(&manifest, Path::new(MANIFEST_PATH))
+        .expect("Failed to build index");
+    let validated = index.validate().expect("Validation failed");
+
+    // Search by function name — should find kl_polynomial directly
+    let by_name = validated.search("kl_polynomial");
+    assert!(!by_name.is_empty(), "kl_polynomial should be found by name");
+
+    // Search by module path — should find items in kazhdan_lusztig module
+    let by_path = validated.search("kazhdan_lusztig");
+    assert!(
+        !by_path.is_empty(),
+        "Items in kazhdan_lusztig module should be found by path"
+    );
+
+    // Search by mathematical name — should match doc comments
+    let by_doc = validated.search("Kazhdan");
+    assert!(
+        !by_doc.is_empty(),
+        "Kazhdan-Lusztig items should be found via doc comment search"
+    );
+}

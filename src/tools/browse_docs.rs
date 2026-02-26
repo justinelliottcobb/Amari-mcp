@@ -43,15 +43,18 @@ impl ToolHandler for BrowseDocsHandler {
         let module_path = args.get("module").and_then(|v| v.as_str());
         let item_name = args.get("item").and_then(|v| v.as_str());
 
-        let crate_info = self.state.index.get_crate(crate_name);
+        let index = self
+            .state
+            .index
+            .read()
+            .map_err(|_| McpError::internal("index lock poisoned"))?;
+        let crate_info = index.get_crate(crate_name);
         let Some(crate_info) = crate_info else {
             return Ok(json!({"error": format!("Crate '{crate_name}' not found")}));
         };
 
         if let Some(item) = item_name {
-            let found = self
-                .state
-                .index
+            let found = index
                 .search(item)
                 .into_iter()
                 .find(|i| i.name == item && i.full_path.contains(crate_name));

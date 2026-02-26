@@ -54,7 +54,8 @@ async fn main() -> Result<()> {
             let validated = index.validate()?;
             info!("Index validated successfully");
 
-            amari_mcp::mcp_pmcp::create_mcp_server(validated, manifest).await?;
+            amari_mcp::mcp_pmcp::create_mcp_server(validated, manifest, cli.manifest.clone())
+                .await?;
         }
         Command::Check => {
             let index = amari_mcp::parser::build_index(&manifest, &cli.manifest)?;

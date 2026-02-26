@@ -223,13 +223,17 @@ impl ApiIndex<Validated> {
         }
     }
 
-    /// Search items by name substring (case-insensitive).
+    /// Search items by name, full path, or doc comment substring (case-insensitive).
     pub fn search(&self, query: &str) -> Vec<&ApiItem> {
         let query_lower = query.to_lowercase();
         self.items_by_name
-            .iter()
-            .filter(|(name, _)| name.to_lowercase().contains(&query_lower))
-            .flat_map(|(_, items)| items.iter())
+            .values()
+            .flatten()
+            .filter(|item| {
+                item.name.to_lowercase().contains(&query_lower)
+                    || item.full_path.to_lowercase().contains(&query_lower)
+                    || item.doc_comment.to_lowercase().contains(&query_lower)
+            })
             .collect()
     }
 
@@ -319,5 +323,79 @@ mod tests {
         let validated = unvalidated.validate().unwrap();
         let _ = validated.search("x"); // Compiles
                                        // validated.validate(); // Would not compile
+    }
+
+    fn make_test_item(name: &str, full_path: &str, doc: &str) -> ApiItem {
+        ApiItem {
+            kind: ItemKind::Function {
+                is_async: false,
+                is_unsafe: false,
+            },
+            name: name.to_string(),
+            full_path: full_path.to_string(),
+            signature: format!("pub fn {name}()"),
+            doc_comment: doc.to_string(),
+            feature_gate: None,
+            generics: None,
+            source_file: PathBuf::from("test.rs"),
+            line_number: 1,
+        }
+    }
+
+    fn make_index_with_items(items: Vec<ApiItem>) -> ApiIndex<Validated> {
+        let mut by_name: HashMap<String, Vec<ApiItem>> = HashMap::new();
+        for item in items {
+            by_name.entry(item.name.clone()).or_default().push(item);
+        }
+        ApiIndex::<Unvalidated>::new("test".to_string(), vec![], by_name, vec![])
+            .validate()
+            .unwrap()
+    }
+
+    #[test]
+    fn search_matches_item_name() {
+        let index = make_index_with_items(vec![make_test_item(
+            "kl_polynomial",
+            "amari::enumerative::kazhdan_lusztig::kl_polynomial",
+            "Compute a Kazhdan-Lusztig polynomial",
+        )]);
+        let results = index.search("kl_polynomial");
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].name, "kl_polynomial");
+    }
+
+    #[test]
+    fn search_matches_full_path() {
+        let index = make_index_with_items(vec![make_test_item(
+            "kl_polynomial",
+            "amari::enumerative::kazhdan_lusztig::kl_polynomial",
+            "Compute a KL polynomial",
+        )]);
+        let results = index.search("kazhdan_lusztig");
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].name, "kl_polynomial");
+    }
+
+    #[test]
+    fn search_matches_doc_comment() {
+        let index = make_index_with_items(vec![make_test_item(
+            "kl_polynomial",
+            "amari::enumerative::kazhdan_lusztig::kl_polynomial",
+            "Compute a Kazhdan-Lusztig polynomial",
+        )]);
+        let results = index.search("Kazhdan");
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].name, "kl_polynomial");
+    }
+
+    #[test]
+    fn search_is_case_insensitive() {
+        let index = make_index_with_items(vec![make_test_item(
+            "kl_polynomial",
+            "amari::enumerative::kazhdan_lusztig::kl_polynomial",
+            "Compute a Kazhdan-Lusztig polynomial",
+        )]);
+        let results = index.search("KAZHDAN");
+        assert_eq!(results.len(), 1);
     }
 }

@@ -51,9 +51,12 @@ impl ToolHandler for ApiSearchHandler {
         let crate_filter = args.get("crate").and_then(|v| v.as_str());
         let limit = args.get("limit").and_then(|v| v.as_u64()).unwrap_or(20) as usize;
 
-        let results: Vec<Value> = self
+        let index = self
             .state
             .index
+            .read()
+            .map_err(|_| McpError::internal("index lock poisoned"))?;
+        let results: Vec<Value> = index
             .search(query)
             .into_iter()
             .filter(|item| kind_filter.is_none_or(|kind| matches_kind(&item.kind, kind)))
