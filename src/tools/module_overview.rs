@@ -45,11 +45,14 @@ impl ToolHandler for ModuleOverviewHandler {
         let module_path = args.get("module").and_then(|v| v.as_str());
         let limit = args.get("limit").and_then(|v| v.as_u64()).unwrap_or(50) as usize;
 
-        let crate_info = self.state.index.get_crate(crate_name);
+        let index = self
+            .state
+            .index
+            .read()
+            .map_err(|_| McpError::internal("index lock poisoned"))?;
+        let crate_info = index.get_crate(crate_name);
         let Some(crate_info) = crate_info else {
-            let available: Vec<_> = self
-                .state
-                .index
+            let available: Vec<_> = index
                 .crates
                 .iter()
                 .map(|c| {

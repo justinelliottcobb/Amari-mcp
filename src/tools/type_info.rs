@@ -33,9 +33,12 @@ impl ToolHandler for TypeInfoHandler {
             .as_str()
             .ok_or_else(|| McpError::invalid_params("name is required"))?;
 
-        let type_items: Vec<_> = self
+        let index = self
             .state
             .index
+            .read()
+            .map_err(|_| McpError::internal("index lock poisoned"))?;
+        let type_items: Vec<_> = index
             .search(name)
             .into_iter()
             .filter(|item| item.name == name || item.full_path.ends_with(name))
@@ -56,9 +59,7 @@ impl ToolHandler for TypeInfoHandler {
 
         let primary = type_items[0];
 
-        let methods: Vec<Value> = self
-            .state
-            .index
+        let methods: Vec<Value> = index
             .search(&primary.name)
             .into_iter()
             .filter(|item| {

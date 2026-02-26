@@ -30,9 +30,12 @@ impl ToolHandler for DependencyGraphHandler {
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
         let crate_filter = args.get("crate").and_then(|v| v.as_str());
 
-        let crate_dirs: Vec<(String, &std::path::Path)> = self
+        let index = self
             .state
             .index
+            .read()
+            .map_err(|_| McpError::internal("index lock poisoned"))?;
+        let crate_dirs: Vec<(String, &std::path::Path)> = index
             .crates
             .iter()
             .map(|c| (c.name.clone(), c.source_dir.as_path()))

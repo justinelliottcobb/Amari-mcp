@@ -29,25 +29,31 @@ impl ToolHandler for FeatureMapHandler {
     async fn handle(&self, args: Value, _extra: RequestHandlerExtra) -> Result<Value, McpError> {
         let feature_filter = args.get("feature").and_then(|v| v.as_str());
 
-        let default_crates: Vec<&str> = self
+        let index = self
             .state
             .index
+            .read()
+            .map_err(|_| McpError::internal("index lock poisoned"))?;
+        let manifest = self
+            .state
+            .manifest
+            .read()
+            .map_err(|_| McpError::internal("manifest lock poisoned"))?;
+        let default_crates: Vec<&str> = index
             .crates
             .iter()
             .filter(|c| c.feature_gate.is_none())
             .map(|c| c.name.as_str())
             .collect();
 
-        let features: Vec<Value> = self
-            .state
-            .manifest
+        let features: Vec<Value> = manifest
             .crates
             .optional
             .iter()
             .filter(|(feature, _)| feature_filter.is_none_or(|f| f == feature.as_str()))
             .map(|(feature, dir_name)| {
-                let alias = self.state.manifest.alias_for(dir_name);
-                let item_count = self.state.index.feature_items(feature).len();
+                let alias = manifest.alias_for(dir_name);
+                let item_count = index.feature_items(feature).len();
                 json!({
                     "feature": feature,
                     "crate_dir": dir_name,
@@ -58,7 +64,7 @@ impl ToolHandler for FeatureMapHandler {
             .collect();
 
         Ok(json!({
-            "library": self.state.manifest.library.name,
+            "library": manifest.library.name,
             "default_crates": default_crates,
             "optional_features": features,
         }))
