@@ -1,20 +1,17 @@
 [package]
 name = "amari-mcp"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Amari Contributors"]
 license = "MIT OR Apache-2.0"
-description = "Simple, stateless MCP server for Amari mathematical computing - geometric algebra, tropical algebra, autodiff, and GPU acceleration"
+description = "Config-driven MCP server providing ground-truth API reference for Rust library ecosystems"
 repository = "https://github.com/justinelliottcobb/amari-mcp"
 homepage = "https://github.com/justinelliottcobb/amari-mcp"
-keywords = ["mcp", "mathematics", "geometric-algebra", "tropical-algebra", "gpu"]
-categories = ["mathematics", "science", "algorithms", "web-programming"]
+keywords = ["mcp", "api-reference", "rust-analyzer", "developer-tools"]
+categories = ["development-tools", "command-line-utilities"]
 
 [dependencies]
-# Core Amari library
-amari = { version = "0.9.5", features = ["gpu"] }
-
-# MCP framework - High-quality Rust SDK
+# MCP framework
 pmcp = "1.1"
 
 # Async runtime
@@ -25,7 +22,21 @@ async-trait = "0.1"
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-schemars = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+
+# Rust source parsing
+syn = { version = "2.0", features = ["full", "parsing", "visit", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = { version = "1.0", features = ["span-locations"] }
+
+# Filesystem
+walkdir = "2.4"
+
+# Search
+regex = "1.10"
+
+# Parallelism
+rayon = "1.10"
 
 # Error handling
 anyhow = "1.0"
@@ -35,19 +46,8 @@ thiserror = "1.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-# Time and ID utilities (always available)
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4"] }
-sha2 = "0.10"
-
-# Database support removed - MCP servers should be simple and stateless
-
 # CLI
 clap = { version = "4.0", features = ["derive"] }
-
-[features]
-default = []
-gpu = ["amari/gpu"]
 
 [lib]
 name = "amari_mcp"
@@ -58,9 +58,9 @@ name = "amari-mcp"
 path = "src/main.rs"
 
 [dev-dependencies]
-approx = "0.5"
 tokio-test = "0.4"
 tempfile = "3.0"
+insta = { version = "1.34", features = ["json"] }
 
 [workspace]
 # Empty workspace table to prevent this from being part of parent workspace
