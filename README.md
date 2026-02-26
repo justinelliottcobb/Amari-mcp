@@ -24,16 +24,26 @@ cargo run --release -- serve
 
 ### Configure Claude Code
 
-Add to your Claude Code MCP settings:
+Add to your Claude Code MCP settings (use absolute paths):
 
 ```json
 {
   "amari-mcp": {
-    "command": "/path/to/amari-mcp/target/release/amari-mcp",
-    "args": ["--manifest", "manifests/amari.toml"]
+    "command": "/absolute/path/to/amari-mcp/target/release/amari-mcp",
+    "args": ["--manifest", "/absolute/path/to/amari-mcp/manifests/amari.toml"]
   }
 }
 ```
+
+Or add it via the CLI:
+
+```bash
+claude mcp add amari-mcp -- /path/to/amari-mcp/target/release/amari-mcp \
+  --manifest /path/to/amari-mcp/manifests/amari.toml
+```
+
+The `--manifest` path must be absolute since the server may be launched from
+any working directory.
 
 ## MCP Tools
 
@@ -68,7 +78,7 @@ The `check` subcommand parses all configured crates and reports statistics:
 ```
 $ cargo run -- check
 Library: amari
-Parsed 19 crates, 577 modules, 5778 items
+Parsed 19 crates, 579 modules, 5796 items
   amari-core (312 items)
   amari-tropical (129 items)
   amari-dual (169 items)
@@ -89,16 +99,21 @@ Create a manifest file describing your library's workspace:
 name = "mylib"
 display_name = "My Library"
 version = "1.0.0"
-source_path = "../path/to/mylib"
+description = "Description of the library"
+source_path = "../path/to/mylib"  # relative to this manifest file
 
 [workspace]
 root_cargo_toml = "Cargo.toml"
+umbrella_crate = "src/lib.rs"
 
 [crates.default]
 members = ["mylib-core", "mylib-utils"]
 
 [crates.optional]
 gpu = "mylib-gpu"
+
+[crates.internal]
+members = []
 
 [aliases]
 mylib-core = "core"

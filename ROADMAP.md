@@ -10,8 +10,9 @@
 - 7 MCP reference tools (api_search, type_info, module_overview, feature_map,
   dependency_graph, browse_docs, usage_examples)
 - `check` CLI subcommand for CI integration
-- Integration tests against live Amari source (19 crates, 577 modules, 5,778 items)
+- Integration tests against live Amari source (19 crates, 579 modules, 5,796 items)
 - 66 tests (60 unit + 6 integration)
+- Source path resolution works from any working directory (absolute manifest paths)
 
 ## Planned
 

@@ -88,7 +88,7 @@ amari-tropical = "tropical"
 
 ```
 src/parser/
-    mod.rs           -- build_index() with rayon parallelism
+    mod.rs           -- build_index(manifest, manifest_path) with rayon parallelism
     workspace.rs     -- Cargo.toml parsing, dependency graph
     module_tree.rs   -- recursive mod declaration walking
     items.rs         -- syn::Visit-based item extraction
@@ -153,6 +153,6 @@ No code changes required. The parser, index, and tools are fully generic.
 
 - **Unit tests** (60): Inline in each module, written test-first per TDD
 - **Integration tests** (6): Run against live Amari source, verify real-world
-  parsing of 19 crates / 577 modules / 5,778 items
+  parsing of 19 crates / 579 modules / 5,796 items
 - **check mode**: CLI subcommand that builds and validates the index, printing
   per-crate statistics. Suitable for CI integration.
